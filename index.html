@@ -108,9 +108,10 @@ body{font-family:system-ui,-apple-system,sans-serif;color:var(--txt);min-height:
 .ovitem:last-child{border-bottom:none}
 
 /* status pago */
-.pay-toggle{width:16px;height:16px;border-radius:4px;border:1.5px solid var(--brd2);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.65rem;transition:all .18s;background:var(--sur)}
-.pay-toggle.paid{background:var(--gn);border-color:var(--gn);color:#fff}
-.pay-toggle:hover{border-color:var(--gn)}
+.pay-toggle{width:32px;height:18px;border-radius:999px;border:none;cursor:pointer;position:relative;transition:background .18s;flex-shrink:0;background:var(--brd2)}
+.pay-toggle.paid{background:var(--gn)}
+.pay-toggle::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#fff;transition:transform .18s}
+.pay-toggle.paid::after{transform:translateX(14px)}
 
 /* alerta vencimento */
 .venc-badge{font-size:.6rem;font-weight:700;padding:.1rem .4rem;border-radius:4px;flex-shrink:0}
@@ -700,7 +701,7 @@ function renderInd(){
             var isOn=String(r.ativo)==='true';
             var pill='<div class="recpill '+(r.tipo==='gasto'?'fx':'en')+'">'+(r.tipo==='gasto'?'Saida':'Entrada')+'</div>';
             var info='<div class="recinfo"><div class="recnm">'+r.descricao+'</div><div class="recsub">'+fmt(r.valor)+' · dia '+(r.dia_vencimento||'—')+'</div></div>';
-            var tog='<button class="rectog '+(isOn?'on':'off')+'" data-id="'+r.id+'" data-ativo="'+(isOn?'true':'false')+'" onclick="togRecBtn(this)"></button>';
+            var tog='<button class="rectog '+(isOn?'on':'off')+'" data-id="'+r.id+'" onclick="togRecBtn(this)"></button>';
             var acts='<div class="recbtnrow"><button class="recact" data-id="'+r.id+'" onclick="openEditRc(this.dataset.id)">✏</button><button class="recact del" data-id="'+r.id+'" onclick="delRec(this.dataset.id)">🗑</button></div>';
             return '<div class="recitem">'+pill+info+'<div class="recval">'+fmt(r.valor)+'</div>'+tog+acts+'</div>';
           }).join('')
@@ -819,7 +820,7 @@ function ovRow(r,tipo){
     if(Math.floor((dv2-t2)/(1000*60*60*24))>=0&&Math.floor((dv2-t2)/(1000*60*60*24))<=3)badge='<span class="venc-badge warn">'+Math.floor((dv2-t2)/(1000*60*60*24))+'d</span>';
   }
   var valColor=tipo==='en'?'var(--gn)':isRec?'var(--am)':'var(--rd)';
-  var payToggle=tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" data-id="'+r.id+'" onclick="togglePaid(this.dataset.id)">'+(paid?'✓':'')+'</div>':'';
+  var payToggle=tipo!=='en'?'<button class="pay-toggle '+(paid?'paid':'')+'" data-id="'+r.id+'" onclick="togglePaid(this.dataset.id)" title="'+(paid?'Marcar como pendente':'Marcar como pago')+'"></button>':'';
   var editBtn=!isRec?'<button class="ovbtn" data-id="'+r.id+'" data-tipo="'+tipo+'" onclick="openEditItem(this.dataset.id,this.dataset.tipo)">✏</button>':'<button class="ovbtn" data-id="'+r.id+'" onclick="openEditRcById(this.dataset.id)">✏</button>';
   var delBtn='<button class="ovbtn del" data-tipo="'+tipo+'" data-id="'+r.id+'" onclick="delItemDirect(this.dataset.tipo,this.dataset.id)">🗑</button>';
   return '<div class="ovitem" id="ovr-'+r.id+'">'+payToggle+badge+
@@ -1024,6 +1025,11 @@ async function delRec(id){
   await api('deleteRecorrente',{id:id});
   dashData.recorrentes=dashData.recorrentes.filter(function(r){return r.id!==id;});
   loadDash();toast('Removido!');
+}
+function togRecBtn(el){
+  var id=el.dataset.id;
+  var ativo=el.classList.contains('on');
+  togRec(id,ativo);
 }
 async function togRec(id,ativo){
   try{await api('updateRecorrente',{id:id,fields:{ativo:!ativo}});loadDash();}catch(e){toast(e.message,'er');}
