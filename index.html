@@ -6,6 +6,15 @@
 <title>Financas do Casal</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<script>
+window.onerror = function(msg, src, line, col, err) {
+  document.body.innerHTML =
+    '<pre style="color:red;padding:20px">' +
+    msg + '\nLinha: ' + line +
+    '\nArquivo: ' + src +
+    '</pre>';
+};
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
