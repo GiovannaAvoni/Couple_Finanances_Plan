@@ -669,9 +669,9 @@ function renderInd(){
         '</div>'+
       '</div>'+
       '<div class="reserva-panel">'+
-        '<div class="rp-title">Reserva de Emergencia <a onclick="openModal('mo-rv')">+ mov.</a></div>'+
+        '<div class="rp-title">Reserva de Emergencia <a data-modal="mo-rv" onclick="openModalData(this)">+ mov.</a></div>'+
         '<div class="resval">'+fmt(c.rv)+'</div>'+
-        '<div class="resmeta">Meta atual: '+fmt(c.meta)+' <a onclick="openModal('mo-mt')" style="font-size:.7rem;color:var(--mut);cursor:pointer">(editar)</a></div>'+
+        '<div class="resmeta">Meta atual: '+fmt(c.meta)+' <a data-modal="mo-mt" onclick="openModalData(this)" style="font-size:.7rem;color:var(--mut);cursor:pointer">(editar)</a></div>'+
         '<div class="ptr"><div class="pf" id="pf" style="width:0%"></div></div>'+
         '<div class="plabs"><span>Progresso</span><span>'+pct+'%</span></div>'+
         // historico metas
@@ -701,7 +701,7 @@ function renderInd(){
               '<div class="recpill '+(r.tipo==='gasto'?'fx':'en')+'">'+(r.tipo==='gasto'?'Saida':'Entrada')+'</div>'+
               '<div class="recinfo"><div class="recnm">'+r.descricao+'</div><div class="recsub">'+fmt(r.valor)+' · dia '+(r.dia_vencimento||'—')+'</div></div>'+
               '<div class="recval">'+fmt(r.valor)+'</div>'+
-              '<button class="rectog '+(String(r.ativo)==='true'?'on':'off')+'" onclick="togRec('+r.id+'','+(String(r.ativo)==='true')+')"></button>'+
+              '<button class="rectog '+(String(r.ativo)==='true'?'on':'off')+'" data-id="'+r.id+'" data-ativo="'+(String(r.ativo)==='true'?'true':'false')+'" onclick="togRecBtn(this)"></button>'+
               '<div class="recbtnrow">'+
                 '<button class="recact" onclick="openEditRc('+r.id+')">✏</button>'+
                 '<button class="recact del" onclick="delRec('+r.id+')">🗑</button>'+
@@ -715,7 +715,7 @@ function renderInd(){
       '<div class="panel">'+
         '<div class="ptitle">Evolucao 6 meses</div>'+
         '<div class="cw"><canvas id="ch-evo"></canvas></div>'+
-        '<div class="ptitle" style="margin-top:1rem">Aportes <a onclick="openModal('mo-ap')">+ registrar</a></div>'+
+        '<div class="ptitle" style="margin-top:1rem">Aportes <a data-modal="mo-ap" onclick="openModalData(this)">+ registrar</a></div>'+
         ap.slice().reverse().slice(0,4).map(function(a){
           return '<div class="apitem"><span class="apmes">'+fmtDate(a.data)+(a.observacao?' · '+a.observacao:'')+'</span><span class="apval">'+fmt(a.valor)+'</span></div>';
         }).join('')+
@@ -797,8 +797,9 @@ function renderOvHTML(){
 
 function ovSec(tipo,titulo,items,total){
   var isOpen=ovOpen[tipo]!==false;
-  return '<div class="ovsec">'+
-    '<div class="ovsechdr" onclick="togOvSec('+'tipo+'')">'+
+  var itemsHtml=items.length?items.map(function(r){return ovRow(r,tipo);}).join(''):'<div style="padding:.4rem 0;font-size:.78rem;color:var(--mut2)">Sem registros</div>';
+  var togBtn='<div class="ovsechdr" data-sec="'+tipo+'" onclick="togOvSec(this.dataset.sec)">';
+  return '<div class="ovsec">'+togBtn+
       '<div class="ovsec-l">'+
         '<div class="ovsec-dot '+tipo+'"></div>'+
         '<span class="ovsec-lbl '+tipo+'">'+titulo+'</span>'+
@@ -810,38 +811,44 @@ function ovSec(tipo,titulo,items,total){
       '</div>'+
     '</div>'+
     '<div id="ov-'+tipo+'-items" style="display:'+(isOpen?'block':'none')+'">'+
-      '<div class="ovitems">'+(items.length?items.map(function(r){return ovRow(r,tipo);}).join(''):'<div style="padding:.4rem 0;font-size:.78rem;color:var(--mut2)">Sem registros</div>')+'</div>'+
+      '<div class="ovitems">'+itemsHtml+'</div>'+
     '</div>'+
   '</div>';
 }
 
+
 function ovRow(r,tipo){
   var isRec=tipo==='rec';
   var paid=!!paidStatus[r.id];
-  var badge=(!isRec&&tipo!=='en')?vencBadge(r.vencimento):'';
-  // alerta discreto para recorrentes
-  if(isRec&&r.vencimento){
-    var today=new Date(),d=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
-    var diff=Math.floor((d-today)/(1000*60*60*24));
-    if(diff>=0&&diff<=3)badge='<span class=\"venc-badge warn\">'+diff+'d</span>';
+  var badge='';
+  if(tipo!=='en'&&tipo!=='rec'&&r.vencimento){
+    var today=new Date(),dv=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
+    var diff=Math.floor((dv-today)/(1000*60*60*24));
+    if(diff<0)badge='<span class="venc-badge late">Atrasado</span>';
+    else if(diff===0)badge='<span class="venc-badge near">Hoje</span>';
+    else if(diff<=3)badge='<span class="venc-badge warn">'+diff+'d</span>';
   }
+  if(isRec&&r.vencimento){
+    var today2=new Date(),dv2=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
+    var diff2=Math.floor((dv2-today2)/(1000*60*60*24));
+    if(diff2>=0&&diff2<=3)badge='<span class="venc-badge warn">'+diff2+'d</span>';
+  }
+  var valColor=tipo==='en'?'var(--gn)':isRec?'var(--am)':'var(--rd)';
+  var valPrefix=tipo==='en'?'+':'-';
+  var payToggle=tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" data-id="'+r.id+'" onclick="togglePaid(this.dataset.id)">'+(paid?'✓':'')+'</div>':'';
+  var editBtn=!isRec?'<button class="ovbtn" data-id="'+r.id+'" data-tipo="'+tipo+'" onclick="openEditItem(this.dataset.id,this.dataset.tipo)">✏</button>':'<button class="ovbtn" data-id="'+r.id+'" onclick="openEditRcById(this.dataset.id)">✏</button>';
+  var delBtn='<button class="ovbtn del" data-tipo="'+tipo+'" data-id="'+r.id+'" onclick="delItemDirect(this.dataset.tipo,this.dataset.id)">🗑</button>';
   return '<div class="ovitem" id="ovr-'+r.id+'">'+
-    (tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" onclick="togglePaid('+r.id+')">'+(paid?'✓':'')+'</div>':'')+
-    badge+
+    payToggle+badge+
     '<div class="ovinfo">'+
-      '<div class="ovdesc'+(paid?' paid-txt':'')+'">'+(r.descricao||'')+'</div>'+
-      '<div class="ovmeta">'+fmtDate(r.data)+(r.categoria?' · '+r.categoria:'')+
-        (r.forma_pagamento?' · '+r.forma_pagamento:'')+
-        (r.vencimento&&tipo!=='en'?' · venc. dia '+r.vencimento:'')+
-      '</div>'+
+      '<div class="ovdesc'+(paid?' paid-txt':'')+'">'+( r.descricao||'')+'</div>'+
+      '<div class="ovmeta">'+fmtDate(r.data)+(r.categoria?' · '+r.categoria:'')+(r.forma_pagamento?' · '+r.forma_pagamento:'')+(r.vencimento&&tipo!=='en'?' · venc. dia '+r.vencimento:'')+'</div>'+
     '</div>'+
-    '<div class="ovval" style="color:'+(tipo==='en'?'var(--gn)':isRec?'var(--am)':'var(--rd)')+'">'+(tipo==='en'?'+':'-')+fmt(r.valor)+'</div>'+
-    '<div class="ovacts">'+
-      (!isRec?'<button class="ovbtn" onclick="openEditItem('+r.id+'',''+tipo+'')">✏</button>':'<button class="ovbtn" onclick="openEditRcById('+r.id+')">✏</button>')+
-      '<button class="ovbtn del" onclick="delItemDirect('+tipo+'',''+r.id+'')">🗑</button>'+
-    '</div>'+
+    '<div class="ovval" style="color:'+valColor+'">'+valPrefix+fmt(r.valor)+'</div>'+
+    '<div class="ovacts">'+editBtn+delBtn+'</div>'+
   '</div>';
 }
+
 
 function reRenderOv(){
   var c=dashData?calcMes(dashData,ovDate.getMonth(),ovDate.getFullYear()):null;
@@ -1040,6 +1047,7 @@ async function delRec(id){
   dashData.recorrentes=dashData.recorrentes.filter(function(r){return r.id!==id;});
   loadDash();toast('Removido!');
 }
+function togRecBtn(el){var id=el.dataset.id;var ativo=el.dataset.ativo==='true';togRec(id,ativo);}
 async function togRec(id,ativo){
   try{await api('updateRecorrente',{id:id,fields:{ativo:!ativo}});loadDash();}catch(e){toast(e.message,'er');}
 }
@@ -1183,19 +1191,62 @@ function renderChPaid(paidVal,pendVal){
 }
 
 function renderChInv(invByType,invTotal){
-  var c=document.getElementById('ch-inv');if(!c||!window.Chart)return;
+  var c=document.getElementById('ch-inv');
+  if(!c||!window.Chart)return;
   if(charts.inv)charts.inv.destroy();
   var keys=Object.keys(invByType);
   if(!keys.length){
-    var ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
-    ctx.fillStyle='#b5b0a4';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText('Sem investimentos',c.width/2,c.height/2);return;
+    var ctx=c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    ctx.fillStyle='#b5b0a4';
+    ctx.font='12px system-ui';
+    ctx.textAlign='center';
+    ctx.fillText('Sem investimentos',c.width/2,c.height/2);
+    return;
   }
-  charts.inv=new Chart(c.getContext('2d'),{type:'doughnut',data:{
-    labels:keys,
-    datasets:[{data:keys.map(function(k){return invByType[k];}),backgroundColor:keys.map(function(k){return INV_COLS[k]||'#7a7669';}),borderWidth:2,borderColor:'#fff'}]
-  },options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-    plugins:{legend:{position:'right',labels:{color:'#7a7669',font:{size:10},padding:6,boxWidth:8,generateLabels:function(chart){return chart.data.labels.map(function(l,i){return{text:l+': '+(invTotal>0?(chart.data.datasets[0].data[i]/invTotal*100).toFixed(0)+'%':'0%'),fillStyle:keys.map(function(k){return INV_COLS[k]||'#7a7669';})[i],strokeStyle:'#fff',lineWidth:1,index:i};});}}}}}}});
+  var cols=keys.map(function(k){return INV_COLS[k]||'#7a7669';});
+  charts.inv=new Chart(c.getContext('2d'),{
+    type:'doughnut',
+    data:{
+      labels:keys,
+      datasets:[{
+        data:keys.map(function(k){return invByType[k];}),
+        backgroundColor:cols,
+        borderWidth:2,
+        borderColor:'#fff'
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      cutout:'60%',
+      plugins:{
+        legend:{
+          position:'right',
+          labels:{
+            color:'#7a7669',
+            font:{size:10},
+            padding:6,
+            boxWidth:8,
+            generateLabels:function(chart){
+              return chart.data.labels.map(function(l,i){
+                var pct=invTotal>0?(chart.data.datasets[0].data[i]/invTotal*100).toFixed(0)+'%':'0%';
+                return{
+                  text:l+': '+pct,
+                  fillStyle:cols[i],
+                  strokeStyle:'#fff',
+                  lineWidth:1,
+                  index:i
+                };
+              });
+            }
+          }
+        }
+      }
+    }
+  });
 }
+
 
 function renderChContrib(gi,br){
   var c=document.getElementById('ch-contrib');if(!c||!window.Chart)return;
@@ -1228,6 +1279,7 @@ function calcular(){
 function exportPDF(){toast('PDF: use Ctrl+P no navegador','ok');}
 
 // ── UI UTILS
+function openModalData(el){openModal(el.dataset.modal);}
 function openModal(id){var e=document.getElementById(id);if(e)e.classList.add('open');}
 function closeModal(id){var e=document.getElementById(id);if(e)e.classList.remove('open');}
 function setSelectVal(id,val){var s=document.getElementById(id);if(!s)return;for(var i=0;i<s.options.length;i++){if(s.options[i].value===val||s.options[i].text===val){s.selectedIndex=i;break;}}}
