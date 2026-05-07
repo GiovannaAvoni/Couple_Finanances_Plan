@@ -73,7 +73,7 @@ body{font-family:system-ui,-apple-system,sans-serif;color:var(--txt);min-height:
 .up{color:var(--gn)}.dn{color:var(--rd)}
 
 /* TOP GRID: overview + painel pago/pendente */
-.top-grid{display:grid;grid-template-columns:1fr 320px;gap:.8rem;margin-bottom:.8rem;align-items:start}
+
 
 /* OVERVIEW */
 .ovp{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r2);overflow:hidden}
@@ -159,18 +159,17 @@ body{font-family:system-ui,-apple-system,sans-serif;color:var(--txt);min-height:
 .pp-stat-val{font-size:.95rem;font-weight:800}
 
 /* MIDDLE GRID */
-.mid-grid{display:grid;grid-template-columns:1fr 280px;gap:.8rem;margin-bottom:.8rem;align-items:start}
+.mid-grid{display:grid;grid-template-columns:260px 1fr;gap:.8rem;margin-bottom:.8rem;align-items:start}
 
 /* ANALISE */
 .analise-panel{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r2);padding:1.05rem 1.2rem}
-.ap-title{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:.9rem}
-.ap-items{display:flex;flex-direction:column;gap:.55rem}
-.ap-item{display:flex;align-items:center;gap:.7rem;padding:.5rem .7rem;background:var(--sur2);border-radius:var(--r);border:1px solid var(--brd)}
-.ap-item-ico{font-size:1rem;flex-shrink:0}
-.ap-item-info{flex:1;min-width:0}
-.ap-item-lbl{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--mut2);font-weight:700}
-.ap-item-val{font-size:.9rem;font-weight:700;margin-top:.1rem}
-.ap-item-sub{font-size:.68rem;color:var(--mut);margin-top:.05rem}
+.ap-title{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);margin-bottom:.75rem}
+.ap-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem}
+.ap-card{background:var(--sur2);border:1px solid var(--brd);border-radius:var(--r);padding:.6rem .7rem;text-align:center;display:flex;flex-direction:column;align-items:center;gap:.15rem}
+.ap-card-ico{font-size:.95rem}
+.ap-card-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:.04em;color:var(--mut2);font-weight:700;line-height:1.2}
+.ap-card-val{font-size:.82rem;font-weight:700;line-height:1.2}
+.ap-card-sub{font-size:.65rem;color:var(--mut);line-height:1.2}
 
 /* RESERVA LADO */
 .reserva-panel{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r2);padding:1.05rem 1.2rem}
@@ -296,7 +295,7 @@ body{font-family:system-ui,-apple-system,sans-serif;color:var(--txt);min-height:
 
 @media(max-width:1100px){
   .hero-row{grid-template-columns:1fr 1fr}.hcard{grid-column:1/-1}
-  .top-grid,.mid-grid,.evo-calc-grid{grid-template-columns:1fr}
+  .mid-grid,.evo-calc-grid{grid-template-columns:1fr}
   .bot-grid{grid-template-columns:1fr 1fr}
   .casalgrid{grid-template-columns:1fr}
 }
@@ -497,11 +496,12 @@ MOCK_BR.investimentos=[{id:'bi1',descricao:'CDB Banco Inter',tipo:'Renda Fixa',v
 // ── API
 async function api(action,params){
   params=params||{};
-  // Tenta API real; cai no mock se falhar
-  try{
-    var res=await fetch(API_URL,{method:'POST',mode:'cors',body:JSON.stringify({action:action,params:params})});
-    if(res.ok){var json=await res.json();if(json.ok)return json.data;}
-  }catch(e){console.warn('Mock:',e.message);}
+  if(true){
+    try{
+      var res=await fetch(API_URL,{method:'POST',mode:'cors',body:JSON.stringify({action:action,params:params})});
+      if(res.ok){var json=await res.json();if(json.ok)return json.data;}
+    }catch(e){console.warn('API offline:',e.message);}
+  }
   if(action==='getDashboardData') return JSON.parse(JSON.stringify(params.usuario==='Bruno Saldanha'?MOCK_BR:MOCK_GI));
   return {ok:true,id:'mock_'+Date.now()};
 }
@@ -566,9 +566,9 @@ function vencBadge(dia){
   if(!dia)return'';
   var today=new Date(),d=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(dia));
   var diff=Math.floor((d-today)/(1000*60*60*24));
-  if(diff<0)return'<span class=\"venc-badge late\">Atrasado</span>';
-  if(diff===0)return'<span class=\"venc-badge near\">Hoje</span>';
-  if(diff<=3)return'<span class=\"venc-badge warn\">'+diff+'d</span>';
+  if(diff<0)return'<span class=\\"venc-badge late\\">Atrasado</span>';
+  if(diff===0)return'<span class=\\"venc-badge near\\">Hoje</span>';
+  if(diff<=3)return'<span class=\\"venc-badge warn\\">'+diff+'d</span>';
   return'';
 }
 
@@ -629,63 +629,63 @@ function renderInd(){
       '<div class="stcard"><span class="stico">🏦</span><div class="stlbl">Reserva</div><div class="stval">'+fmt(c.rv)+'</div><div class="stdlt up">'+pct+'% da meta</div></div>'+
     '</div>'+
 
-    // TOP GRID: overview + pago/pendente
-    '<div class="top-grid">'+
-      '<div class="ovp" id="ovp">'+renderOvHTML(c)+'</div>'+
-      '<div>'+
-        '<div class="pay-panel">'+
-          '<div class="pp-title">Contas pagas x pendentes</div>'+
-          '<div class="pp-donut-wrap">'+
-            '<canvas id="ch-paid" width="110" height="110" style="flex-shrink:0"></canvas>'+
-            '<div class="pp-legend">'+
-              '<div class="pp-leg-item"><div class="pp-leg-dot" style="background:var(--gn)"></div><span class="pp-leg-label">Pago</span><span class="pp-leg-val" style="color:var(--gn)">'+fmt(paidVal)+'</span></div>'+
-              '<div class="pp-leg-item"><div class="pp-leg-dot" style="background:var(--rd-bd)"></div><span class="pp-leg-label">Pendente</span><span class="pp-leg-val" style="color:var(--rd)">'+fmt(pendVal)+'</span></div>'+
-            '</div>'+
-          '</div>'+
-          '<div class="pp-stats">'+
-            '<div class="pp-stat"><div class="pp-stat-lbl">Contas pagas</div><div class="pp-stat-val" style="color:var(--gn)">'+paidCount+'</div></div>'+
-            '<div class="pp-stat"><div class="pp-stat-lbl">Pendentes</div><div class="pp-stat-val" style="color:var(--rd)">'+pendCount+'</div></div>'+
-          '</div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
+    // TOP: overview full width
+    '<div class="ovp" id="ovp" style="margin-bottom:.8rem">'+renderOvHTML(c)+'</div>'+
 
-    // MID GRID: analise + reserva
-    '<div class="mid-grid">'+
-      '<div class="analise-panel">'+
+    // ANALISE: full width
+    '<div class="analise-panel">'+
         '<div class="ap-title">Analise do mes</div>'+
-        '<div class="ap-items">'+
-          '<div class="ap-item"><div class="ap-item-ico">📊</div><div class="ap-item-info"><div class="ap-item-lbl">Maior saida</div><div class="ap-item-val">'+
-            (s.insights&&s.insights.catMaisUsada?s.insights.catMaisUsada[0]+' — '+fmt(s.insights.catMaisUsada[1]):'—')+
-          '</div></div></div>'+
-          '<div class="ap-item"><div class="ap-item-ico">📉</div><div class="ap-item-info"><div class="ap-item-lbl">Mes com mais gastos</div><div class="ap-item-val">'+
-            (s.insights&&s.insights.mesMaiorGasto?s.insights.mesMaiorGasto.label:'-')+
-          '</div></div></div>'+
-          '<div class="ap-item"><div class="ap-item-ico">💚</div><div class="ap-item-info"><div class="ap-item-lbl">Mes com maior sobra</div><div class="ap-item-val">'+
-            (s.insights&&s.insights.mesMaiorEcon?s.insights.mesMaiorEcon.label:'-')+
-          '</div></div></div>'+
-          '<div class="ap-item"><div class="ap-item-ico">📈</div><div class="ap-item-info"><div class="ap-item-lbl">Aporte do mes</div><div class="ap-item-val">'+fmt(c.totA)+'</div></div></div>'+
-          '<div class="ap-item"><div class="ap-item-ico">💼</div><div class="ap-item-info"><div class="ap-item-lbl">Total investido</div><div class="ap-item-val">'+fmt(invTotal)+'</div><div class="ap-item-sub">'+Object.keys(invByType).length+' ativos</div></div></div>'+
+        '<div class="ap-cards">'+
+          '<div class="ap-card"><div class="ap-card-ico">📊</div><div class="ap-card-lbl">Maior saida</div><div class="ap-card-val">'+(s.insights&&s.insights.catMaisUsada?s.insights.catMaisUsada[0]:'—')+'</div><div class="ap-card-sub">'+(s.insights&&s.insights.catMaisUsada?fmt(s.insights.catMaisUsada[1]):'')+'</div></div>'+
+          '<div class="ap-card"><div class="ap-card-ico">📉</div><div class="ap-card-lbl">Mais saidas</div><div class="ap-card-val">'+(s.insights&&s.insights.mesMaiorGasto?s.insights.mesMaiorGasto.label:'-')+'</div></div>'+
+          '<div class="ap-card"><div class="ap-card-ico">💚</div><div class="ap-card-lbl">Maior sobra</div><div class="ap-card-val">'+(s.insights&&s.insights.mesMaiorEcon?s.insights.mesMaiorEcon.label:'-')+'</div></div>'+
+          '<div class="ap-card"><div class="ap-card-ico">📈</div><div class="ap-card-lbl">Aporte</div><div class="ap-card-val">'+fmt(c.totA)+'</div></div>'+
+          '<div class="ap-card"><div class="ap-card-ico">💼</div><div class="ap-card-lbl">Investido</div><div class="ap-card-val">'+fmt(invTotal)+'</div><div class="ap-card-sub">'+Object.keys(invByType).length+' ativos</div></div>'+
         '</div>'+
       '</div>'+
-      '<div class="reserva-panel">'+
+
+    // MID GRID: pagas/pendentes | reserva
+    '<div class="mid-grid">'+
+      '<div class="pay-panel">'+
+        '<div class="pp-title">Pagas x Pendentes</div>'+
+        '<div class="pp-donut-wrap">'+
+          '<canvas id="ch-paid" width="100" height="100" style="flex-shrink:0"></canvas>'+
+          '<div class="pp-legend">'+
+            '<div class="pp-leg-item"><div class="pp-leg-dot" style="background:var(--gn)"></div><span class="pp-leg-label">Pago</span><span class="pp-leg-val" style="color:var(--gn)">'+fmt(paidVal)+'</span></div>'+
+            '<div class="pp-leg-item"><div class="pp-leg-dot" style="background:var(--rd-bd)"></div><span class="pp-leg-label">Pendente</span><span class="pp-leg-val" style="color:var(--rd)">'+fmt(pendVal)+'</span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="pp-stats">'+
+          '<div class="pp-stat"><div class="pp-stat-lbl">Pagas</div><div class="pp-stat-val" style="color:var(--gn)">'+paidCount+'</div></div>'+
+          '<div class="pp-stat"><div class="pp-stat-lbl">Pendentes</div><div class="pp-stat-val" style="color:var(--rd)">'+pendCount+'</div></div>'+
+        '</div>'+
+      '</div>'+'<div class="reserva-panel">'+
         '<div class="rp-title">Reserva de Emergencia <a data-modal="mo-rv" onclick="openModalData(this)">+ mov.</a></div>'+
         '<div class="resval">'+fmt(c.rv)+'</div>'+
-        '<div class="resmeta">Meta atual: '+fmt(c.meta)+' <a data-modal="mo-mt" onclick="openModalData(this)" style="font-size:.7rem;color:var(--mut);cursor:pointer">(editar)</a></div>'+
+        '<div class="resmeta">Meta atual: '+fmt(c.meta)+'</div>'+
         '<div class="ptr"><div class="pf" id="pf" style="width:0%"></div></div>'+
         '<div class="plabs"><span>Progresso</span><span>'+pct+'%</span></div>'+
-        // historico metas
         '<div class="meta-hist">'+
-          metas.map(function(m){return '<div class="meta-hist-item">Meta: <span class="mhi-val">'+fmt(m.meta)+'</span> '+
-            (m.concluida?'<span class="mhi-done">✔ concluida</span>':'<span style="color:var(--mut2)">em andamento</span>')+
+          '<div class="rv-hist-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:.7rem">Metas <a data-modal="mo-mt" onclick="openModalData(this)" style="font-size:.68rem;font-weight:600;cursor:pointer;text-decoration:none;color:var(--mut)">+ nova</a></div>'+
+          metas.map(function(m,mi){return '<div class="rv-hist-item">'+
+            '<span class="rhi-date">'+fmt(m.meta)+'</span>'+
+            '<div style="display:flex;align-items:center;gap:.3rem">'+
+              (m.concluida?'<span class="mhi-done" style="font-size:.68rem">✔</span>':'<span style="color:var(--mut2);font-size:.68rem">em andamento</span>')+
+              '<button class="ovbtn" data-mi="'+mi+'" onclick="editMeta(Number(this.dataset.mi))">✏</button>'+
+              '<button class="ovbtn del" data-mi="'+mi+'" onclick="delMeta(Number(this.dataset.mi))">🗑</button>'+
+            '</div>'+
           '</div>';}).join('')+
         '</div>'+
-        // historico movimentações
         '<div class="rv-hist">'+
-          '<div class="rv-hist-title">Movimentacoes</div>'+
-          rv.slice().reverse().slice(0,5).map(function(r){
-            return '<div class="rv-hist-item"><span class="rhi-date">'+fmtDate(r.data)+(r.observacao?' · '+r.observacao:'')+'</span><span class="rhi-val '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'-')+fmt(r.valor)+'</span></div>';
-          }).join('')+
+          '<div class="rv-hist-title" style="display:flex;align-items:center;justify-content:space-between;margin-top:.7rem">Movimentacoes <a data-modal="mo-rv" onclick="openModalData(this)" style="font-size:.68rem;font-weight:600;cursor:pointer;text-decoration:none;color:var(--mut)">+ nova</a></div>'+
+          rv.slice().reverse().slice(0,8).map(function(r,ri){return '<div class="rv-hist-item">'+
+            '<span class="rhi-date">'+fmtDate(r.data)+(r.observacao?' · '+r.observacao:'')+'</span>'+
+            '<div style="display:flex;align-items:center;gap:.3rem">'+
+              '<span class="rhi-val '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'-')+fmt(r.valor)+'</span>'+
+              '<button class="ovbtn" data-rid="'+r.id+'" onclick="editRv(this.dataset.rid)">✏</button>'+
+              '<button class="ovbtn del" data-rid="'+r.id+'" onclick="delRv(this.dataset.rid)">🗑</button>'+
+            '</div>'+
+          '</div>';}).join('')+
         '</div>'+
       '</div>'+
     '</div>'+
@@ -697,16 +697,12 @@ function renderInd(){
         '<div class="rec-panel-title">Recorrentes <a onclick="openNewRc()">+ novo</a></div>'+
         (recs.length?
           recs.map(function(r){
-            return '<div class="recitem">'+
-              '<div class="recpill '+(r.tipo==='gasto'?'fx':'en')+'">'+(r.tipo==='gasto'?'Saida':'Entrada')+'</div>'+
-              '<div class="recinfo"><div class="recnm">'+r.descricao+'</div><div class="recsub">'+fmt(r.valor)+' · dia '+(r.dia_vencimento||'—')+'</div></div>'+
-              '<div class="recval">'+fmt(r.valor)+'</div>'+
-              '<button class="rectog '+(String(r.ativo)==='true'?'on':'off')+'" data-id="'+r.id+'" data-ativo="'+(String(r.ativo)==='true'?'true':'false')+'" onclick="togRecBtn(this)"></button>'+
-              '<div class="recbtnrow">'+
-                '<button class="recact" onclick="openEditRc('+r.id+')">✏</button>'+
-                '<button class="recact del" onclick="delRec('+r.id+')">🗑</button>'+
-              '</div>'+
-            '</div>';
+            var isOn=String(r.ativo)==='true';
+            var pill='<div class="recpill '+(r.tipo==='gasto'?'fx':'en')+'">'+(r.tipo==='gasto'?'Saida':'Entrada')+'</div>';
+            var info='<div class="recinfo"><div class="recnm">'+r.descricao+'</div><div class="recsub">'+fmt(r.valor)+' · dia '+(r.dia_vencimento||'—')+'</div></div>';
+            var tog='<button class="rectog '+(isOn?'on':'off')+'" data-id="'+r.id+'" data-ativo="'+(isOn?'true':'false')+'" onclick="togRecBtn(this)"></button>';
+            var acts='<div class="recbtnrow"><button class="recact" data-id="'+r.id+'" onclick="openEditRc(this.dataset.id)">✏</button><button class="recact del" data-id="'+r.id+'" onclick="delRec(this.dataset.id)">🗑</button></div>';
+            return '<div class="recitem">'+pill+info+'<div class="recval">'+fmt(r.valor)+'</div>'+tog+acts+'</div>';
           }).join('')
         :'<div style="color:var(--mut2);font-size:.78rem;padding:.5rem 0">Nenhum recorrente</div>')+
       '</div>'+
@@ -715,7 +711,7 @@ function renderInd(){
       '<div class="panel">'+
         '<div class="ptitle">Evolucao 6 meses</div>'+
         '<div class="cw"><canvas id="ch-evo"></canvas></div>'+
-        '<div class="ptitle" style="margin-top:1rem">Aportes <a data-modal="mo-ap" onclick="openModalData(this)">+ registrar</a></div>'+
+        '<div class="ptitle" style="margin-top:1rem">Aportes <a onclick="openModal(\'mo-ap\')">+ registrar</a></div>'+
         ap.slice().reverse().slice(0,4).map(function(a){
           return '<div class="apitem"><span class="apmes">'+fmtDate(a.data)+(a.observacao?' · '+a.observacao:'')+'</span><span class="apval">'+fmt(a.valor)+'</span></div>';
         }).join('')+
@@ -734,8 +730,8 @@ function renderInd(){
               '<div class="inv-info"><div class="inv-nm">'+inv.descricao+'</div><div class="inv-sub">'+inv.tipo+(inv.quantidade?' · qt:'+inv.quantidade:'')+'</div></div>'+
               '<div class="inv-val">'+fmt(inv.valor)+'</div>'+
               '<div class="inv-pct">'+pct2+'%</div>'+
-              '<button class="invact" onclick="openEditInv('+inv.id+')">✏</button>'+
-              '<button class="invact del" onclick="delInv('+inv.id+')">🗑</button>'+
+              '<button class="invact" onclick="openEditInv(\''+inv.id+'\')">✏</button>'+
+              '<button class="invact del" onclick="delInv(\''+inv.id+'\')">🗑</button>'+
             '</div>';
           }).join('')
         :'<div style="color:var(--mut2);font-size:.78rem;padding:.3rem 0">Nenhum investimento</div>')+
@@ -798,30 +794,20 @@ function renderOvHTML(){
 function ovSec(tipo,titulo,items,total){
   var isOpen=ovOpen[tipo]!==false;
   var itemsHtml=items.length?items.map(function(r){return ovRow(r,tipo);}).join(''):'<div style="padding:.4rem 0;font-size:.78rem;color:var(--mut2)">Sem registros</div>';
-  var togBtn='<div class="ovsechdr" data-sec="'+tipo+'" onclick="togOvSec(this.dataset.sec)">';
-  return '<div class="ovsec">'+togBtn+
-      '<div class="ovsec-l">'+
-        '<div class="ovsec-dot '+tipo+'"></div>'+
-        '<span class="ovsec-lbl '+tipo+'">'+titulo+'</span>'+
-        '<span class="ovsec-ct">'+items.length+'</span>'+
-      '</div>'+
-      '<div class="ovsec-right">'+
-        '<span class="ovsec-total '+tipo+'">'+fmt(total)+'</span>'+
-        '<span class="ovsec-tog '+(isOpen?'open':'')+'" id="otog-'+tipo+'">▾</span>'+
-      '</div>'+
+  return '<div class="ovsec">'+
+    '<div class="ovsechdr" data-sec="'+tipo+'" onclick="togOvSec(this.dataset.sec)">'+
+      '<div class="ovsec-l"><div class="ovsec-dot '+tipo+'"></div><span class="ovsec-lbl '+tipo+'">'+titulo+'</span><span class="ovsec-ct">'+items.length+'</span></div>'+
+      '<div class="ovsec-right"><span class="ovsec-total '+tipo+'">'+fmt(total)+'</span><span class="ovsec-tog '+(isOpen?'open':'')+'" id="otog-'+tipo+'">▾</span></div>'+
     '</div>'+
-    '<div id="ov-'+tipo+'-items" style="display:'+(isOpen?'block':'none')+'">'+
-      '<div class="ovitems">'+itemsHtml+'</div>'+
-    '</div>'+
+    '<div id="ov-'+tipo+'-items" style="display:'+(isOpen?'block':'none')+'"><div class="ovitems">'+itemsHtml+'</div></div>'+
   '</div>';
 }
-
 
 function ovRow(r,tipo){
   var isRec=tipo==='rec';
   var paid=!!paidStatus[r.id];
   var badge='';
-  if(tipo!=='en'&&tipo!=='rec'&&r.vencimento){
+  if(tipo!=='en'&&!isRec&&r.vencimento){
     var today=new Date(),dv=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
     var diff=Math.floor((dv-today)/(1000*60*60*24));
     if(diff<0)badge='<span class="venc-badge late">Atrasado</span>';
@@ -829,26 +815,18 @@ function ovRow(r,tipo){
     else if(diff<=3)badge='<span class="venc-badge warn">'+diff+'d</span>';
   }
   if(isRec&&r.vencimento){
-    var today2=new Date(),dv2=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
-    var diff2=Math.floor((dv2-today2)/(1000*60*60*24));
-    if(diff2>=0&&diff2<=3)badge='<span class="venc-badge warn">'+diff2+'d</span>';
+    var t2=new Date(),dv2=new Date(ovDate.getFullYear(),ovDate.getMonth(),Number(r.vencimento));
+    if(Math.floor((dv2-t2)/(1000*60*60*24))>=0&&Math.floor((dv2-t2)/(1000*60*60*24))<=3)badge='<span class="venc-badge warn">'+Math.floor((dv2-t2)/(1000*60*60*24))+'d</span>';
   }
   var valColor=tipo==='en'?'var(--gn)':isRec?'var(--am)':'var(--rd)';
-  var valPrefix=tipo==='en'?'+':'-';
   var payToggle=tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" data-id="'+r.id+'" onclick="togglePaid(this.dataset.id)">'+(paid?'✓':'')+'</div>':'';
   var editBtn=!isRec?'<button class="ovbtn" data-id="'+r.id+'" data-tipo="'+tipo+'" onclick="openEditItem(this.dataset.id,this.dataset.tipo)">✏</button>':'<button class="ovbtn" data-id="'+r.id+'" onclick="openEditRcById(this.dataset.id)">✏</button>';
   var delBtn='<button class="ovbtn del" data-tipo="'+tipo+'" data-id="'+r.id+'" onclick="delItemDirect(this.dataset.tipo,this.dataset.id)">🗑</button>';
-  return '<div class="ovitem" id="ovr-'+r.id+'">'+
-    payToggle+badge+
-    '<div class="ovinfo">'+
-      '<div class="ovdesc'+(paid?' paid-txt':'')+'">'+( r.descricao||'')+'</div>'+
-      '<div class="ovmeta">'+fmtDate(r.data)+(r.categoria?' · '+r.categoria:'')+(r.forma_pagamento?' · '+r.forma_pagamento:'')+(r.vencimento&&tipo!=='en'?' · venc. dia '+r.vencimento:'')+'</div>'+
-    '</div>'+
-    '<div class="ovval" style="color:'+valColor+'">'+valPrefix+fmt(r.valor)+'</div>'+
-    '<div class="ovacts">'+editBtn+delBtn+'</div>'+
-  '</div>';
+  return '<div class="ovitem" id="ovr-'+r.id+'">'+payToggle+badge+
+    '<div class="ovinfo"><div class="ovdesc'+(paid?' paid-txt':'')+'">'+( r.descricao||'')+'</div><div class="ovmeta">'+fmtDate(r.data)+(r.categoria?' · '+r.categoria:'')+(r.forma_pagamento?' · '+r.forma_pagamento:'')+(r.vencimento&&tipo!=='en'?' · venc. dia '+r.vencimento:'')+'</div></div>'+
+    '<div class="ovval" style="color:'+valColor+'">'+(tipo==='en'?'+':'-')+fmt(r.valor)+'</div>'+
+    '<div class="ovacts">'+editBtn+delBtn+'</div></div>';
 }
-
 
 function reRenderOv(){
   var c=dashData?calcMes(dashData,ovDate.getMonth(),ovDate.getFullYear()):null;
@@ -1047,7 +1025,6 @@ async function delRec(id){
   dashData.recorrentes=dashData.recorrentes.filter(function(r){return r.id!==id;});
   loadDash();toast('Removido!');
 }
-function togRecBtn(el){var id=el.dataset.id;var ativo=el.dataset.ativo==='true';togRec(id,ativo);}
 async function togRec(id,ativo){
   try{await api('updateRecorrente',{id:id,fields:{ativo:!ativo}});loadDash();}catch(e){toast(e.message,'er');}
 }
@@ -1191,62 +1168,21 @@ function renderChPaid(paidVal,pendVal){
 }
 
 function renderChInv(invByType,invTotal){
-  var c=document.getElementById('ch-inv');
-  if(!c||!window.Chart)return;
+  var c=document.getElementById('ch-inv');if(!c||!window.Chart)return;
   if(charts.inv)charts.inv.destroy();
   var keys=Object.keys(invByType);
-  if(!keys.length){
-    var ctx=c.getContext('2d');
-    ctx.clearRect(0,0,c.width,c.height);
-    ctx.fillStyle='#b5b0a4';
-    ctx.font='12px system-ui';
-    ctx.textAlign='center';
-    ctx.fillText('Sem investimentos',c.width/2,c.height/2);
-    return;
-  }
+  if(!keys.length){var ctx2=c.getContext('2d');ctx2.clearRect(0,0,c.width,c.height);ctx2.fillStyle='#b5b0a4';ctx2.font='12px system-ui';ctx2.textAlign='center';ctx2.fillText('Sem investimentos',c.width/2,c.height/2);return;}
   var cols=keys.map(function(k){return INV_COLS[k]||'#7a7669';});
-  charts.inv=new Chart(c.getContext('2d'),{
-    type:'doughnut',
-    data:{
-      labels:keys,
-      datasets:[{
-        data:keys.map(function(k){return invByType[k];}),
-        backgroundColor:cols,
-        borderWidth:2,
-        borderColor:'#fff'
-      }]
-    },
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      cutout:'60%',
-      plugins:{
-        legend:{
-          position:'right',
-          labels:{
-            color:'#7a7669',
-            font:{size:10},
-            padding:6,
-            boxWidth:8,
-            generateLabels:function(chart){
-              return chart.data.labels.map(function(l,i){
-                var pct=invTotal>0?(chart.data.datasets[0].data[i]/invTotal*100).toFixed(0)+'%':'0%';
-                return{
-                  text:l+': '+pct,
-                  fillStyle:cols[i],
-                  strokeStyle:'#fff',
-                  lineWidth:1,
-                  index:i
-                };
-              });
-            }
-          }
-        }
-      }
+  charts.inv=new Chart(c.getContext('2d'),{type:'doughnut',data:{labels:keys,
+    datasets:[{data:keys.map(function(k){return invByType[k];}),backgroundColor:cols,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{position:'right',labels:{color:'#7a7669',font:{size:10},padding:6,boxWidth:8,
+        generateLabels:function(chart){return chart.data.labels.map(function(l,i){
+          return{text:l+': '+(invTotal>0?(chart.data.datasets[0].data[i]/invTotal*100).toFixed(0)+'%':'0%'),fillStyle:cols[i],strokeStyle:'#fff',lineWidth:1,index:i};
+        });}}}}
     }
   });
 }
-
 
 function renderChContrib(gi,br){
   var c=document.getElementById('ch-contrib');if(!c||!window.Chart)return;
@@ -1284,6 +1220,43 @@ function openModal(id){var e=document.getElementById(id);if(e)e.classList.add('o
 function closeModal(id){var e=document.getElementById(id);if(e)e.classList.remove('open');}
 function setSelectVal(id,val){var s=document.getElementById(id);if(!s)return;for(var i=0;i<s.options.length;i++){if(s.options[i].value===val||s.options[i].text===val){s.selectedIndex=i;break;}}}
 function setTodayForms(){var t=new Date().toISOString().split('T')[0];['gs-dt','en-dt','ap-dt','rv-dt','inv-dt'].forEach(function(id){var e=document.getElementById(id);if(e)e.value=t;});}
+
+// ── RESERVA EDIÇÃO
+function editMeta(mi){
+  var metas=dashData.metaHistorico||[];
+  var m=metas[mi];if(!m)return;
+  document.getElementById('mt-vl').value=m.meta||'';
+  document.getElementById('mt-vl').dataset.mi=mi;
+  openModal('mo-mt');
+}
+async function delMeta(mi){
+  if(!confirm('Excluir esta meta?'))return;
+  var metas=dashData.metaHistorico||[];
+  metas.splice(mi,1);
+  dashData.metaHistorico=metas;
+  toast('Meta removida!');
+  renderInd();
+}
+function editRv(id){
+  var rv=dashData.reserva||[];
+  var item=null;for(var i=0;i<rv.length;i++){if(rv[i].id===id){item=rv[i];break;}}
+  if(!item)return;
+  document.getElementById('rv-dt').value=item.data||'';
+  document.getElementById('rv-vl').value=item.valor||'';
+  document.getElementById('rv-ob').value=item.observacao||'';
+  document.getElementById('rv-vl').dataset.rid=id;
+  if(item.tipo==='deposito')document.getElementById('rv-tp').value='deposito';
+  else document.getElementById('rv-tp').value='retirada';
+  openModal('mo-rv');
+}
+async function delRv(id){
+  if(!confirm('Excluir esta movimentacao?'))return;
+  await api('deleteRow',{sheetName:'reserva_emergencia',id:id});
+  dashData.reserva=(dashData.reserva||[]).filter(function(r){return r.id!==id;});
+  toast('Movimentacao removida!');
+  renderInd();
+}
+
 function toast(msg,type){
   var t=document.getElementById('toast');
   t.textContent=msg;t.className='show'+(type?' '+type:'');
