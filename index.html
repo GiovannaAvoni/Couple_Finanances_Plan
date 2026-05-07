@@ -497,7 +497,7 @@ MOCK_BR.investimentos=[{id:'bi1',descricao:'CDB Banco Inter',tipo:'Renda Fixa',v
 // ── API
 async function api(action,params){
   params=params||{};
-  if(API_URL&&API_URL.indexOf('https://script.google.com/macros/s/AKfycbzk-0kYMxTtW9ynnIRzQBgu6Cn5unEjoDCulLZbnT-aSQm0Sxg7wbuoUXc3qHCH0ZOl/exec')<0){
+  if(API_URL&&API_URL.indexOf('SUA_URL_AQUI')<0){
     try{
       var res=await fetch(API_URL,{method:'POST',mode:'cors',body:JSON.stringify({action:action,params:params})});
       if(res.ok){var json=await res.json();if(json.ok)return json.data;}
