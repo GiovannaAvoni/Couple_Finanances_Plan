@@ -497,12 +497,11 @@ MOCK_BR.investimentos=[{id:'bi1',descricao:'CDB Banco Inter',tipo:'Renda Fixa',v
 // ── API
 async function api(action,params){
   params=params||{};
-  if(API_URL&&API_URL.indexOf('SUA_URL_AQUI')<0){
-    try{
-      var res=await fetch(API_URL,{method:'POST',mode:'cors',body:JSON.stringify({action:action,params:params})});
-      if(res.ok){var json=await res.json();if(json.ok)return json.data;}
-    }catch(e){console.warn('API offline:',e.message);}
-  }
+  // Tenta API real; cai no mock se falhar
+  try{
+    var res=await fetch(API_URL,{method:'POST',mode:'cors',body:JSON.stringify({action:action,params:params})});
+    if(res.ok){var json=await res.json();if(json.ok)return json.data;}
+  }catch(e){console.warn('Mock:',e.message);}
   if(action==='getDashboardData') return JSON.parse(JSON.stringify(params.usuario==='Bruno Saldanha'?MOCK_BR:MOCK_GI));
   return {ok:true,id:'mock_'+Date.now()};
 }
@@ -702,10 +701,10 @@ function renderInd(){
               '<div class="recpill '+(r.tipo==='gasto'?'fx':'en')+'">'+(r.tipo==='gasto'?'Saida':'Entrada')+'</div>'+
               '<div class="recinfo"><div class="recnm">'+r.descricao+'</div><div class="recsub">'+fmt(r.valor)+' · dia '+(r.dia_vencimento||'—')+'</div></div>'+
               '<div class="recval">'+fmt(r.valor)+'</div>'+
-              '<button class="rectog '+(String(r.ativo)==='true'?'on':'off')+'" onclick="togRec(''+r.id+'','+(String(r.ativo)==='true')+')"></button>'+
+              '<button class="rectog '+(String(r.ativo)==='true'?'on':'off')+'" onclick="togRec('+r.id+'','+(String(r.ativo)==='true')+')"></button>'+
               '<div class="recbtnrow">'+
-                '<button class="recact" onclick="openEditRc(''+r.id+'')">✏</button>'+
-                '<button class="recact del" onclick="delRec(''+r.id+'')">🗑</button>'+
+                '<button class="recact" onclick="openEditRc('+r.id+')">✏</button>'+
+                '<button class="recact del" onclick="delRec('+r.id+')">🗑</button>'+
               '</div>'+
             '</div>';
           }).join('')
@@ -735,8 +734,8 @@ function renderInd(){
               '<div class="inv-info"><div class="inv-nm">'+inv.descricao+'</div><div class="inv-sub">'+inv.tipo+(inv.quantidade?' · qt:'+inv.quantidade:'')+'</div></div>'+
               '<div class="inv-val">'+fmt(inv.valor)+'</div>'+
               '<div class="inv-pct">'+pct2+'%</div>'+
-              '<button class="invact" onclick="openEditInv(''+inv.id+'')">✏</button>'+
-              '<button class="invact del" onclick="delInv(''+inv.id+'')">🗑</button>'+
+              '<button class="invact" onclick="openEditInv('+inv.id+')">✏</button>'+
+              '<button class="invact del" onclick="delInv('+inv.id+')">🗑</button>'+
             '</div>';
           }).join('')
         :'<div style="color:var(--mut2);font-size:.78rem;padding:.3rem 0">Nenhum investimento</div>')+
@@ -799,7 +798,7 @@ function renderOvHTML(){
 function ovSec(tipo,titulo,items,total){
   var isOpen=ovOpen[tipo]!==false;
   return '<div class="ovsec">'+
-    '<div class="ovsechdr" onclick="togOvSec(''+tipo+'')">'+
+    '<div class="ovsechdr" onclick="togOvSec('+'tipo+'')">'+
       '<div class="ovsec-l">'+
         '<div class="ovsec-dot '+tipo+'"></div>'+
         '<span class="ovsec-lbl '+tipo+'">'+titulo+'</span>'+
@@ -827,7 +826,7 @@ function ovRow(r,tipo){
     if(diff>=0&&diff<=3)badge='<span class=\"venc-badge warn\">'+diff+'d</span>';
   }
   return '<div class="ovitem" id="ovr-'+r.id+'">'+
-    (tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" onclick="togglePaid(''+r.id+'')">'+(paid?'✓':'')+'</div>':'')+
+    (tipo!=='en'?'<div class="pay-toggle'+(paid?' paid':'')+'" onclick="togglePaid('+r.id+')">'+(paid?'✓':'')+'</div>':'')+
     badge+
     '<div class="ovinfo">'+
       '<div class="ovdesc'+(paid?' paid-txt':'')+'">'+(r.descricao||'')+'</div>'+
@@ -838,8 +837,8 @@ function ovRow(r,tipo){
     '</div>'+
     '<div class="ovval" style="color:'+(tipo==='en'?'var(--gn)':isRec?'var(--am)':'var(--rd)')+'">'+(tipo==='en'?'+':'-')+fmt(r.valor)+'</div>'+
     '<div class="ovacts">'+
-      (!isRec?'<button class="ovbtn" onclick="openEditItem(''+r.id+'',''+tipo+'')">✏</button>':'<button class="ovbtn" onclick="openEditRcById(''+r.vencimento?r.id:r.id+'')">✏</button>')+
-      '<button class="ovbtn del" onclick="delItemDirect(''+tipo+'',''+r.id+'')">🗑</button>'+
+      (!isRec?'<button class="ovbtn" onclick="openEditItem('+r.id+'',''+tipo+'')">✏</button>':'<button class="ovbtn" onclick="openEditRcById('+r.id+')">✏</button>')+
+      '<button class="ovbtn del" onclick="delItemDirect('+tipo+'',''+r.id+'')">🗑</button>'+
     '</div>'+
   '</div>';
 }
