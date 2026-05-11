@@ -733,7 +733,8 @@ body.theme-aurora .an-hl-val{font-family:var(--fnt-display);font-weight:500}
 
 /* ═══════════════════════════════ GRID PRINCIPAL ═══════════════════════════════ */
 .grid-main{display:grid;grid-template-columns:1.55fr 1fr;gap:1rem;margin-bottom:1.4rem}
-.grid-bot{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+.rv-col{display:flex;flex-direction:column;gap:1rem}
+.grid-bot{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
 .panel{background:var(--sur);border:1px solid var(--brd);border-radius:var(--r3);padding:1.25rem 1.4rem}
 body.theme-pulse .panel{border:1px solid var(--brd2)}
 .panel-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
@@ -809,6 +810,12 @@ body.theme-cocoon .rv-big{font-family:var(--fnt-display);font-weight:800}
 .rv-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);animation:shimmer 2.5s infinite}
 @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
 .rv-labs{display:flex;justify-content:space-between;font-family:var(--fnt-mono);font-size:.68rem;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.rv-details{display:none;overflow:hidden}
+.rv-panel.expanded .rv-details{display:block}
+.rv-toggle-btn{background:none;border:none;cursor:pointer;color:var(--mut);font-size:.88rem;padding:.18rem .3rem;border-radius:4px;line-height:1;transition:transform .25s,color .2s;display:inline-flex;align-items:center}
+.rv-panel.expanded .rv-toggle-btn{transform:rotate(90deg)}
+.rv-toggle-btn:hover{color:var(--ink)}
+.rv-hdr-click{cursor:pointer}
 .rv-list{margin-top:1rem;border-top:1px solid var(--brd);padding-top:.85rem}
 .rv-list-title{font-family:var(--fnt-mono);font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut);margin-bottom:.55rem;display:flex;justify-content:space-between;align-items:center}
 .rv-item{display:flex;align-items:center;justify-content:space-between;padding:.42rem 0;border-bottom:1px solid var(--brd);font-size:.82rem}
@@ -941,6 +948,8 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   .an-strip{grid-template-columns:1fr 1fr}
   .an-strip .an-card:first-child{grid-column:1/-1}
   .grid-main{grid-template-columns:1fr}
+  .rv-col{flex-direction:row;flex-wrap:wrap}
+  .rv-col>.panel{flex:1 1 300px}
   .grid-bot{grid-template-columns:1fr 1fr}
   .casal-row{grid-template-columns:1fr}
 }
@@ -952,6 +961,8 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   .strip{grid-template-columns:1fr 1fr}
   .an-strip{grid-template-columns:1fr}
   .an-strip .an-card:first-child{grid-column:auto}
+  .rv-col{flex-direction:column!important}
+  .rv-col>.panel{flex:none!important}
   .grid-bot{grid-template-columns:1fr}
   .topbar{padding:.6rem .85rem}
   .mrow{grid-template-columns:1fr}
@@ -1535,14 +1546,16 @@ function renderInd(){
     '</div>'+
     // ANALYTICS STRIP
     panelAnalytics(dashData,c,evo)+
-    // GRID MAIN: overview + reserva
+    // GRID MAIN: overview | (reserva + recorrentes)
     '<div class="grid-main">'+
       panelOv(c)+
-      panelReserva(c,rv,metas,pct)+
+      '<div class="rv-col">'+
+        panelReserva(c,rv,metas,pct)+
+        panelRecs(recs)+
+      '</div>'+
     '</div>'+
-    // GRID BOT: recorrentes + aportes/evolucao + investimentos
+    // GRID BOT: evolucao + investimentos
     '<div class="grid-bot">'+
-      panelRecs(recs)+
       panelEvo(evo,ap)+
       panelInvs(invs,invTotal)+
     '</div>'+
@@ -1832,34 +1845,44 @@ function togglePaid(id){
 
 // ═══ RESERVA
 function panelReserva(c,rv,metas,pct){
-  return '<div class="panel">'+
-    '<div class="panel-hdr">'+
+  return '<div class="panel rv-panel" id="rv-panel">'+
+    '<div class="panel-hdr rv-hdr-click" onclick="togReserva()">'+
       '<div><div class="panel-sub">Cofrinho</div><div class="panel-title">Reserva</div></div>'+
-      '<div class="panel-actions"><button class="btn-add" onclick="openModal(\'mo-rv\')">+ Mov.</button></div>'+
+      '<div class="panel-actions" onclick="event.stopPropagation()">'+
+        '<button class="btn-add" onclick="openModal(\'mo-rv\')">+ Mov.</button>'+
+        '<button class="rv-toggle-btn" onclick="togReserva();event.stopPropagation()" title="Ver detalhes">›</button>'+
+      '</div>'+
     '</div>'+
     '<div class="rv-big" id="rv-big">'+fmt(c.rv)+'</div>'+
     '<div class="rv-meta">Meta: '+fmt(c.meta)+' · '+pct+'% concluído</div>'+
     '<div class="rv-bar"><div class="rv-fill" data-pct="'+pct+'" style="width:0%"></div></div>'+
     '<div class="rv-labs"><span>Início</span><span>'+pct+'%</span></div>'+
-    '<div class="rv-list">'+
-      '<div class="rv-list-title">Metas <a class="btn-add" style="padding:.18rem .55rem;font-size:.66rem" onclick="openModal(\'mo-mt\')">+ nova</a></div>'+
-      metas.map(function(m,mi){
-        var done=m.concluida===true||m.concluida==='true';
-        return '<div class="rv-item meta-item"><div class="rv-item-l">'+
-          '<span class="rv-date">'+fmtDate(m.data)+'</span>'+fmt(m.meta)+
-          (done?' <span class="meta-done">✓ concluída</span>':' <span style="color:var(--mut);font-family:var(--fnt-mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.08em">em curso</span>')+
-          '</div><div class="rv-act-row">'+
-            '<button class="ov-btn" onclick="toggleMeta('+mi+')" title="'+(done?'Desmarcar':'Concluir')+'">'+(done?'↺':'✓')+'</button>'+
-            '<button class="ov-btn" onclick="openEditMeta('+mi+')" title="Editar">✎</button>'+
-            '<button class="ov-btn del" onclick="delMeta('+mi+')" title="Excluir">×</button>'+
-          '</div></div>';
-      }).join('')+
-    '</div>'+
-    '<div class="rv-list">'+
-      '<div class="rv-list-title">Movimentações</div>'+
-      (rv.length?rv.slice().reverse().slice(0,5).map(function(r){return '<div class="rv-item"><div class="rv-item-l"><span class="rv-date">'+fmtDate(r.data)+'</span>'+(r.observacao||'—')+'</div><div class="rv-item-v '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'−')+' '+fmt(r.valor)+'</div></div>';}).join(''):'<div class="ov-empty">Sem movimentações.</div>')+
+    '<div class="rv-details">'+
+      '<div class="rv-list">'+
+        '<div class="rv-list-title">Metas <a class="btn-add" style="padding:.18rem .55rem;font-size:.66rem" onclick="openModal(\'mo-mt\')">+ nova</a></div>'+
+        metas.map(function(m,mi){
+          var done=m.concluida===true||m.concluida==='true';
+          return '<div class="rv-item meta-item"><div class="rv-item-l">'+
+            '<span class="rv-date">'+fmtDate(m.data)+'</span>'+fmt(m.meta)+
+            (done?' <span class="meta-done">✓ concluída</span>':' <span style="color:var(--mut);font-family:var(--fnt-mono);font-size:.66rem;text-transform:uppercase;letter-spacing:.08em">em curso</span>')+
+            '</div><div class="rv-act-row">'+
+              '<button class="ov-btn" onclick="toggleMeta('+mi+')" title="'+(done?'Desmarcar':'Concluir')+'">'+(done?'↺':'✓')+'</button>'+
+              '<button class="ov-btn" onclick="openEditMeta('+mi+')" title="Editar">✎</button>'+
+              '<button class="ov-btn del" onclick="delMeta('+mi+')" title="Excluir">×</button>'+
+            '</div></div>';
+        }).join('')+
+      '</div>'+
+      '<div class="rv-list">'+
+        '<div class="rv-list-title">Movimentações</div>'+
+        (rv.length?rv.slice().reverse().slice(0,5).map(function(r){return '<div class="rv-item"><div class="rv-item-l"><span class="rv-date">'+fmtDate(r.data)+'</span>'+(r.observacao||'—')+'</div><div class="rv-item-v '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'−')+' '+fmt(r.valor)+'</div></div>';}).join(''):'<div class="ov-empty">Sem movimentações.</div>')+
+      '</div>'+
     '</div>'+
   '</div>';
+}
+
+function togReserva(){
+  var p=document.getElementById('rv-panel');
+  if(p)p.classList.toggle('expanded');
 }
 
 // ═══ RECORRENTES
