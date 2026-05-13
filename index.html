@@ -6,8 +6,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800&family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@300;400;500;600;700&family=Instrument+Serif&display=swap" rel="stylesheet">
-<script src="9e666356-5d0f-4710-99d2-2ab4ccc51688"></script>
-<script src="e3aaf426-7d53-431b-94bc-f4dfd7cc1e79"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -51,12 +50,12 @@ body.theme-pulse.prof-ca{--accent:#ffd56b;--accent-soft:rgba(255,213,107,.14);--
 
 /* ═══════════════════════════════ TEMA COCOON (bento playful) ═══════════════════════════════ */
 body.theme-cocoon{
-  --bg:#f4f0e8;--sur:#fff;--sur2:#faf6ec;--sur3:rgba(0,0,0,.03);
+  --bg:#f5e8ec;--sur:#fff;--sur2:#faf6ec;--sur3:rgba(0,0,0,.03);
   --ink:#1d1a17;--ink2:#5e564b;--mut:#8e8576;--mut2:#bdb4a4;
   --brd:rgba(0,0,0,.07);--brd2:rgba(0,0,0,.14);
   --accent:#000;--accent-fg:#fff;--accent-soft:#f0ebe0;
   --pos:#5d8053;--neg:#b85c45;--warn:#c8964a;
-  --fnt-display:'Bricolage Grotesque',system-ui,sans-serif;--fnt-body:'Geist',system-ui,sans-serif;
+  --fnt-display:'Bricolage Grotesque',system-ui,sans-serif;--fnt-body:'DM Sans',system-ui,sans-serif;
   --fnt-mono:'Geist Mono',ui-monospace,monospace;
   --shadow:0 1px 0 rgba(0,0,0,.04),0 4px 0 rgba(0,0,0,.04);
 }
@@ -148,9 +147,6 @@ body.theme-cocoon .pcard.ca{--accent-fill:#c8a347}
 .tbtn:hover{border-color:var(--brd2);color:var(--ink)}
 .tbtn.pri{background:var(--accent);color:var(--accent-fg);border-color:transparent}
 .tbtn.pri:hover{filter:brightness(.92)}
-.theme-mini{display:flex;gap:.18rem;background:var(--sur);border:1px solid var(--brd);border-radius:999px;padding:.18rem}
-.theme-mini button{width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;font-size:.7rem;background:none;color:var(--mut);display:flex;align-items:center;justify-content:center;font-family:var(--fnt-mono)}
-.theme-mini button.active{background:var(--ink);color:var(--bg)}
 
 /* MAIN */
 .main{padding:1.5rem 1.4rem 4rem;max-width:1340px;margin:0 auto}
@@ -541,18 +537,12 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
       <button class="tb-mnav" onclick="chgMonth(1)">›</button>
     </div>
     <div class="tb-actions">
-      <div class="theme-mini" id="theme-mini">
-        <button class="active" data-theme="aurora">A</button>
-        <button data-theme="pulse">P</button>
-        <button data-theme="cocoon">C</button>
-        <button data-theme="glow">G</button>
-      </div>
-      <button class="tbtn" id="btn-add-en" onclick="openNewEn()">+ Entrada</button>
-      <button class="tbtn pri" id="btn-add-gs" onclick="openNewGs()" style="background-color: rgb(210, 26, 109)">+ Saída</button>
+<button class="tbtn" id="btn-add-en" onclick="openNewEn()">+ Entrada</button>
+      <button class="tbtn pri" id="btn-add-gs" onclick="openNewGs()">+ Saída</button>
       <button class="tbtn" onclick="voltar()">Sair</button>
     </div>
   </div>
-  <div class="main" id="mc" style="font-family: Geist"><span class="spin"></span></div>
+  <div class="main" id="mc"><span class="spin"></span></div>
 </div>
 
 <!-- MODAIS -->
@@ -630,26 +620,6 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
 
 
 
-<style id="__om-edit-overrides">
-#hn-sob { color: rgb(205, 45, 119) !important }
-#hn-sob { color: rgb(185, 27, 99) !important }
-#hn-sob { color: rgb(172, 21, 90) !important }
-#rv-big { color: rgb(210, 26, 109) !important }
-#mc .panel-hdr .solid { background-color: rgb(210, 26, 109) !important }
-#mc .rec-list [onclick="togRec('r1',true)"] { background-color: rgb(210, 26, 109) !important }
-#mc .rec-list [onclick="togRec('r2',true)"] { background-color: rgb(210, 26, 109) !important }
-#mc .rec-list [onclick="togRec('r3',true)"] { background-color: rgb(210, 26, 109) !important }
-#mc .rec-list [onclick="togRec('r4',true)"] { background-color: rgb(210, 26, 109) !important }
-#mc .calc-btn { background-color: rgb(210, 26, 109) !important }
-#mc .hero-num { font-weight: 600 !important }
-#mc .hero-num { font-weight: 100 !important }
-#mc .hero-num { font-weight: 900 !important }
-#mc .hero-num { font-weight: 800 !important }
-#mc .hero-num { font-weight: 600 !important }
-#mc .hero-num { font-weight: 700 !important }
-#mc .hs-row .hs-gauge-num { color: rgb(210, 26, 109) !important }
-#ov-list >.paid >:is(button,input,textarea) { background-color: rgb(210, 26, 109) !important }
-</style>
 <script>
 // Mock data + shared helpers
 window.MBR=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
