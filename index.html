@@ -791,7 +791,7 @@ window.calcMes=function(data,mes,ano){
   var eA=e.filter(function(r){return!r.virtual&&isMes(r.data,mesA,anoA);});
   var aM=ap.filter(function(r){return isMes(r.data,mes,ano);});
   var rvVal=rv.reduce(function(s,r){return r.tipo==='deposito'?s+Number(r.valor):s-Number(r.valor);},0);
-  var totG=sum(gM),totRec=sum(recM),totE=sum(eM);
+  var totG=sum(gM),totRec=sum(recM),totE=sum(eM)+sum(recEM);
   return{gM:gM,recM:recM,recEM:recEM,eM:eM,gA:gA,eA:eA,aM:aM,
     totG:totG,totRec:totRec,totSaidas:totG+totRec,totE:totE,
     totGa:sum(gA),totEa:sum(eA),totA:sum(aM),rv:rvVal,
