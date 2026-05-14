@@ -382,6 +382,25 @@ body.theme-pulse .rec-pill.gs{color:var(--accent)}
 .rec-tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .rec-tog.on::after{transform:translateX(14px)}
 
+/* ASSINATURAS */
+.as-list{display:flex;flex-direction:column}
+.as-row{display:flex;align-items:center;gap:.6rem;padding:.62rem 0;border-bottom:1px solid var(--brd);transition:opacity .2s}
+.as-row:last-child{border-bottom:none}
+.as-row.off{opacity:.38}
+.as-card{font-family:var(--fnt-mono);font-size:.58rem;font-weight:700;letter-spacing:.04em;padding:.18rem .45rem;border-radius:99px;flex-shrink:0;text-transform:uppercase}
+.as-card.nubank{background:#f3e6fd;color:#820ad1}
+.as-card.santander{background:#ffe5e5;color:#c00}
+.as-card.itau{background:#e5ecff;color:#003399}
+.as-card.outro{background:var(--sur3);color:var(--mut)}
+.as-info{flex:1;min-width:0}
+.as-nm{font-size:.86rem;font-weight:600;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.as-meta{font-size:.68rem;color:var(--mut);margin-top:.1rem;font-family:var(--fnt-mono)}
+.as-val{font-size:.86rem;font-weight:700;font-variant-numeric:tabular-nums;flex-shrink:0}
+.as-acts{display:flex;gap:.1rem;flex-shrink:0;opacity:.35;transition:opacity .18s}
+.as-row:hover .as-acts{opacity:1}
+.as-summary{display:flex;justify-content:space-between;align-items:baseline;padding-top:.7rem;margin-top:.35rem;border-top:1px solid var(--brd);font-family:var(--fnt-mono);font-size:.68rem;color:var(--mut)}
+.as-summary strong{color:var(--ink);font-variant-numeric:tabular-nums}
+
 /* INV */
 .inv-tot{font-family:var(--fnt-display);font-size:2rem;font-weight:500;letter-spacing:-.02em;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;margin-bottom:.2rem}
 body.theme-pulse .inv-tot{font-family:var(--fnt-body);font-weight:300}
@@ -652,6 +671,18 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   <div class="mrow"><div class="mfg"><label>Data</label><input type="date" id="ap-dt"></div><div class="mfg"><label>Valor R$</label><input type="number" id="ap-vl" inputmode="decimal"></div></div>
   <div class="mfg"><label>Observação</label><input type="text" id="ap-ob"></div>
   <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-ap')">Cancelar</button><button class="mbtn save" onclick="savAp()">Salvar</button></div>
+</div></div>
+
+<div class="mol" id="mo-as" onclick="if(event.target===this)closeModal('mo-as')"><div class="modal">
+  <h3 id="as-ti">Nova assinatura</h3><input type="hidden" id="as-id">
+  <div class="mfg"><label>Nome</label><input type="text" id="as-nm" placeholder="Ex: Netflix"></div>
+  <div class="mrow">
+    <div class="mfg"><label>Valor R$</label><input type="number" id="as-vl" inputmode="decimal"></div>
+    <div class="mfg"><label>Dia do mês</label><input type="number" id="as-dia" min="1" max="28" inputmode="numeric"></div>
+  </div>
+  <div class="mfg"><label>Cartão</label><select id="as-ct"><option value="Nubank">Nubank</option><option value="Santander">Santander</option><option value="Itaú">Itaú</option><option value="Outro">Outro</option></select></div>
+  <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-as')">Cancelar</button><button class="mbtn save" onclick="savAs()">Salvar</button></div>
+  <button class="mbtn-del" id="as-del-btn" style="display:none" onclick="delAsFromModal()">Excluir</button>
 </div></div>
 
 <div id="toast"></div>
@@ -1100,6 +1131,7 @@ function renderInd(){
   var insights=calcInsights(dashData,c);
   var evo=(dashData.summary&&dashData.summary.evolucao)||[];
   var recs=dashData.recorrentes||[];
+  var assinaturas=dashData.assinaturas||[];
   var rv=dashData.reserva||[];
   var invs=dashData.investimentos||[];
   var ap=dashData.aportes||[];
@@ -1136,6 +1168,7 @@ function renderInd(){
       '<div class="rv-col">'+
         panelReserva(c,rv,metas,pct)+
         panelRecs(recs)+
+        panelAssinaturas(assinaturas)+
       '</div>'+
     '</div>'+
     // GRID BOT: evolucao + investimentos
@@ -1494,6 +1527,89 @@ function panelRecs(recs){
       }).join(''):'<div class="ov-empty">Nenhum recorrente cadastrado.</div>')+
     '</div>'+
   '</div>';
+}
+
+// ═══ ASSINATURAS
+function cardCls(c){return({Nubank:'nubank',Santander:'santander','Itaú':'itau'})[c]||'outro';}
+function panelAssinaturas(list){
+  var ativas=list.filter(function(a){return a.ativo!==false;});
+  var totAtivas=ativas.reduce(function(s,a){return s+Number(a.valor);},0);
+  return '<div class="panel">'+
+    '<div class="panel-hdr">'+
+      '<div><div class="panel-sub">Gestão</div><div class="panel-title">Assinaturas</div></div>'+
+      '<div class="panel-actions"><button class="btn-add" onclick="openNewAs()">+ Nova</button></div>'+
+    '</div>'+
+    '<div class="as-list">'+
+      (list.length?list.slice().sort(function(a,b){return(a.ativo===false?1:0)-(b.ativo===false?1:0);}).map(function(a){
+        var on=a.ativo!==false;
+        return '<div class="as-row '+(on?'':'off')+'">'+
+          '<span class="as-card '+cardCls(a.cartao)+'">'+a.cartao+'</span>'+
+          '<div class="as-info">'+
+            '<div class="as-nm">'+a.nome+'</div>'+
+            '<div class="as-meta">dia '+(a.dia||'—')+'</div>'+
+          '</div>'+
+          '<div class="as-val">'+fmt(a.valor)+'</div>'+
+          '<div class="as-acts">'+
+            '<button class="rec-tog '+(on?'on':'')+'" onclick="togAs(\''+a.id+'\')" title="'+(on?'Desativar':'Ativar')+'"></button>'+
+            '<button class="ov-btn" onclick="openEditAs(\''+a.id+'\')">✎</button>'+
+            '<button class="ov-btn del" onclick="delAs(\''+a.id+'\')">×</button>'+
+          '</div>'+
+        '</div>';
+      }).join(''):'<div class="ov-empty">Nenhuma assinatura cadastrada.</div>')+
+    '</div>'+
+    (list.length?'<div class="as-summary"><span>'+ativas.length+' ativas</span><span>Total mensal <strong>'+fmt(totAtivas)+'</strong></span></div>':'')+
+  '</div>';
+}
+
+var editAs=false;
+function openNewAs(){resetAs();document.getElementById('as-del-btn').style.display='none';openModal('mo-as');}
+function openEditAs(id){
+  var item=(dashData.assinaturas||[]).filter(function(a){return a.id===id;})[0];if(!item)return;
+  editAs=true;
+  document.getElementById('as-ti').textContent='Editar assinatura';
+  document.getElementById('as-del-btn').style.display='block';
+  document.getElementById('as-id').value=id;
+  document.getElementById('as-nm').value=item.nome||'';
+  document.getElementById('as-vl').value=item.valor||'';
+  document.getElementById('as-dia').value=item.dia||'';
+  setSel('as-ct',item.cartao);
+  openModal('mo-as');
+}
+function savAs(){
+  var id=V('as-id');
+  var f={nome:V('as-nm'),valor:V('as-vl'),dia:V('as-dia'),cartao:V('as-ct')};
+  if(!f.nome||!f.valor)return toast('Preencha nome e valor');
+  closeModal('mo-as');
+  if(!dashData.assinaturas)dashData.assinaturas=[];
+  if(editAs&&id){
+    for(var i=0;i<dashData.assinaturas.length;i++)if(dashData.assinaturas[i].id===id){Object.assign(dashData.assinaturas[i],f);break;}
+    toast('Assinatura atualizada');
+  }else{
+    dashData.assinaturas.push(Object.assign({id:'as'+Date.now(),ativo:true},f));
+    toast('Assinatura adicionada');
+  }
+  resetAs();renderInd();
+}
+function delAsFromModal(){
+  var id=V('as-id');if(!id||!confirm('Excluir?'))return;
+  dashData.assinaturas=(dashData.assinaturas||[]).filter(function(a){return a.id!==id;});
+  closeModal('mo-as');resetAs();renderInd();toast('Excluída');
+}
+function delAs(id){
+  if(!confirm('Excluir?'))return;
+  dashData.assinaturas=(dashData.assinaturas||[]).filter(function(a){return a.id!==id;});
+  renderInd();toast('Excluída');
+}
+function togAs(id){
+  var list=dashData.assinaturas||[];
+  for(var i=0;i<list.length;i++)if(list[i].id===id){list[i].ativo=!list[i].ativo;break;}
+  renderInd();
+}
+function resetAs(){
+  editAs=false;
+  document.getElementById('as-id').value='';
+  document.getElementById('as-ti').textContent='Nova assinatura';
+  ['as-nm','as-vl','as-dia'].forEach(function(id){document.getElementById(id).value='';});
 }
 
 // ═══ EVOLUÇÃO + APORTES
