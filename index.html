@@ -279,6 +279,7 @@ body.theme-cocoon .panel-title{font-family:var(--fnt-display);font-weight:700;fo
 
 .ov-cat{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);display:flex;align-items:center;justify-content:center;font-size:.95rem;flex-shrink:0;font-family:var(--fnt-mono);font-weight:600}
 body.theme-pulse .ov-cat{color:var(--accent)}
+body.theme-cocoon .ov-cat{background:var(--accent);color:#fff}
 
 .ov-info{flex:1;min-width:0}
 .ov-desc{font-size:.92rem;font-weight:600;letter-spacing:-.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:.45rem}
@@ -287,10 +288,12 @@ body.theme-pulse .ov-tag{color:var(--accent)}
 .ov-tag.fixed{background:var(--sur3);color:var(--ink2)}
 .ov-tag.warn{background:color-mix(in oklab,var(--warn) 18%,transparent);color:var(--warn)}
 .ov-tag.late{background:color-mix(in oklab,var(--neg) 18%,transparent);color:var(--neg)}
+body.theme-cocoon .ov-tag.late{background:var(--accent);color:var(--accent-fg)}
 .ov-meta{font-size:.7rem;color:var(--mut);margin-top:.15rem;font-family:var(--fnt-mono)}
 .ov-val{font-size:.95rem;font-weight:700;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:var(--fnt-body);width:120px;text-align:right;font-feature-settings:"tnum"}
 .ov-val.in{color:var(--accent)}
 body.theme-pulse .ov-val.in{color:var(--accent)}
+body.theme-cocoon .ov-val.in{color:var(--pos)}
 .ov-val.out{color:var(--ink)}
 .ov-val.out.dim{color:var(--mut)}
 .ov-acts{display:flex;gap:.1rem;flex-shrink:0;width:54px;justify-content:flex-end;opacity:.4;transition:opacity .18s}
@@ -302,8 +305,12 @@ body.theme-pulse .ov-val.in{color:var(--accent)}
 .ov-empty{padding:2rem 0;text-align:center;color:var(--mut);font-size:.85rem}
 .ov-mnav{width:28px;height:28px;border-radius:50%;background:var(--sur3);border:1px solid var(--brd);cursor:pointer;color:var(--ink2);font-size:.95rem;display:inline-flex;align-items:center;justify-content:center;font-family:inherit;transition:all .15s;line-height:1}
 .ov-mnav:hover{background:var(--accent);color:var(--accent-fg);border-color:transparent}
-.ov-group{font-family:var(--fnt-mono);font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);padding:.95rem 0 .35rem;border-bottom:1px solid var(--brd);margin:.2rem -.5rem 0;padding-left:.5rem;padding-right:.5rem;font-weight:700}
+.ov-group{display:flex;align-items:center;justify-content:space-between;font-family:var(--fnt-mono);font-size:.62rem;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);padding:.75rem 0 .35rem;border-bottom:1px solid var(--brd);margin:.2rem -.5rem 0;padding-left:.5rem;padding-right:.5rem;font-weight:700}
 .ov-group:first-child{padding-top:.1rem}
+.ov-group-ct{font-size:.6rem;background:var(--sur3);border-radius:99px;padding:.05rem .35rem;margin-left:.35rem;font-weight:600;letter-spacing:0;text-transform:none}
+.ov-group-total{font-variant-numeric:tabular-nums;letter-spacing:0;font-weight:700;font-size:.68rem}
+.ov-group-total.pos{color:var(--pos)}
+.ov-group-total.neg{color:var(--accent)}
 .meta-done{display:inline-flex;align-items:center;gap:.25rem;padding:.1rem .5rem;border-radius:99px;background:color-mix(in oklab,var(--pos) 18%,transparent);color:var(--pos);font-family:var(--fnt-mono);font-size:.66rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-left:.25rem}
 
 /* TOTAL FOOTER */
@@ -311,7 +318,7 @@ body.theme-pulse .ov-val.in{color:var(--accent)}
 .ov-foot-lbl{font-family:var(--fnt-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
 .ov-foot-val{font-family:var(--fnt-display);font-size:1.6rem;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 body.theme-pulse .ov-foot-val{font-family:var(--fnt-body);font-weight:400}
-body.theme-cocoon .ov-foot-val{font-family:var(--fnt-display);font-weight:700}
+body.theme-cocoon .ov-foot-val{font-family:var(--fnt-display);font-weight:700;color:var(--accent)}
 
 /* RESERVA */
 .rv-big{font-family:var(--fnt-display);font-size:2.4rem;font-weight:500;letter-spacing:-.025em;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums;margin:.4rem 0 .15rem}
@@ -1230,8 +1237,8 @@ function panelOv(c){
     '</div>'+
     '<div class="ov-list" id="ov-list">'+ovList(c,'all')+'</div>'+
     '<div class="ov-foot">'+
-      '<div><div class="ov-foot-lbl">Saídas</div><div class="ov-foot-val">'+fmt(c.totSaidas)+'</div></div>'+
-      '<div style="text-align:right"><div class="ov-foot-lbl">Entradas</div><div class="ov-foot-val" style="color:var(--pos)">'+fmt(c.totE)+'</div></div>'+
+      '<div class="ov-foot-lbl">Total de saídas</div>'+
+      '<div class="ov-foot-val">'+fmt(c.totSaidas)+'</div>'+
     '</div>'+
   '</div>';
 }
@@ -1245,10 +1252,13 @@ function ovList(c,filter){
     var recs=c.recM.slice().sort(byD).map(function(r){return Object.assign({},r,{_kind:'rec'});});
     var gas=c.gM.slice().sort(byD).map(function(r){return Object.assign({},r,{_kind:'gs'});});
     var allEns=recEns.concat(ens).sort(byD);
+    var totAllEns=allEns.reduce(function(s,r){return s+Number(r.valor);},0);
+    var totRecs=recs.reduce(function(s,r){return s+Number(r.valor);},0);
+    var totGas=gas.reduce(function(s,r){return s+Number(r.valor);},0);
     var html='';
-    if(allEns.length)html+='<div class="ov-group">Entradas</div>'+allEns.map(ovRow).join('');
-    if(recs.length)html+='<div class="ov-group">Saídas fixas</div>'+recs.map(ovRow).join('');
-    if(gas.length)html+='<div class="ov-group">Saídas variáveis</div>'+gas.map(ovRow).join('');
+    if(allEns.length)html+='<div class="ov-group"><span>− Entradas <span class="ov-group-ct">'+allEns.length+'</span></span><span class="ov-group-total pos">+ '+fmt(totAllEns)+'</span></div>'+allEns.map(ovRow).join('');
+    if(recs.length)html+='<div class="ov-group"><span>− Saídas fixas <span class="ov-group-ct">'+recs.length+'</span></span><span class="ov-group-total neg">− '+fmt(totRecs)+'</span></div>'+recs.map(ovRow).join('');
+    if(gas.length)html+='<div class="ov-group"><span>− Saídas variáveis <span class="ov-group-ct">'+gas.length+'</span></span><span class="ov-group-total neg">− '+fmt(totGas)+'</span></div>'+gas.map(ovRow).join('');
     return html||'<div class="ov-empty">Nenhuma movimentação por aqui.</div>';
   }
   var items=[];
@@ -1332,12 +1342,11 @@ function togglePaid(id){
 
 // ═══ RESERVA
 function panelReserva(c,rv,metas,pct){
-  return '<div class="panel rv-panel" id="rv-panel">'+
-    '<div class="panel-hdr rv-hdr-click" onclick="togReserva()">'+
-      '<div><div class="panel-sub">Cofrinho</div><div class="panel-title">Reserva</div></div>'+
-      '<div class="panel-actions" onclick="event.stopPropagation()">'+
+  return '<div class="panel rv-panel expanded" id="rv-panel">'+
+    '<div class="panel-hdr">'+
+      '<div><div class="panel-title">Reserva</div></div>'+
+      '<div class="panel-actions">'+
         '<button class="btn-add" onclick="openModal(\'mo-rv\')">+ Mov.</button>'+
-        '<button class="rv-toggle-btn" onclick="togReserva();event.stopPropagation()" title="Ver detalhes">›</button>'+
       '</div>'+
     '</div>'+
     '<div class="rv-big" id="rv-big">'+fmt(c.rv)+'</div>'+
