@@ -589,7 +589,7 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   <div class="mrow"><div class="mfg"><label>Data</label><input type="date" id="gs-dt"></div><div class="mfg"><label>Valor R$</label><input type="number" id="gs-vl" inputmode="decimal" placeholder="0,00"></div></div>
   <div class="mfg"><label>Descrição</label><input type="text" id="gs-ds" placeholder="Ex: Mercado"></div>
   <div class="mrow">
-    <div class="mfg"><label>Categoria</label><select id="gs-ct"><option>Alimentação</option><option>Transporte</option><option>Moradia</option><option>Saúde</option><option>Lazer</option><option>Educação</option><option>Vestuário</option><option>Assinaturas</option><option>Presentes</option><option>Outros</option></select></div>
+    <div class="mfg"><label>Categoria</label><select id="gs-ct"><option>Alimentação</option><option>Transporte</option><option>Moradia</option><option>Saúde</option><option>Lazer</option><option>Educação</option><option>Vestuário</option><option>Assinaturas</option><option>Presentes</option><option>Cartão de Crédito</option><option>Outros</option></select></div>
     <div class="mfg"><label>Pagamento</label><select id="gs-pg"><option>Pix</option><option>Crédito</option><option>Débito</option><option>Dinheiro</option><option>Boleto</option></select></div>
   </div>
   <div class="mfg"><label>Vencimento (dia do mês)</label><input type="number" id="gs-venc" min="1" max="31" inputmode="numeric"></div>
@@ -614,7 +614,7 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   <div class="mfg"><label>Descrição</label><input type="text" id="rc-ds"></div>
   <div class="mrow"><div class="mfg"><label>Valor R$</label><input type="number" id="rc-vl" inputmode="decimal"></div><div class="mfg"><label>Dia do mês</label><input type="number" id="rc-dia" min="1" max="28" inputmode="numeric"></div></div>
   <div class="mrow">
-    <div class="mfg"><label>Categoria</label><select id="rc-ct"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Saúde</option><option>Assinaturas</option><option>Salário</option><option>Outros</option></select></div>
+    <div class="mfg"><label>Categoria</label><select id="rc-ct"><option>Moradia</option><option>Alimentação</option><option>Transporte</option><option>Saúde</option><option>Assinaturas</option><option>Cartão de Crédito</option><option>Salário</option><option>Outros</option></select></div>
     <div class="mfg"><label>Pagamento</label><select id="rc-pg"><option>Pix</option><option>Débito automático</option><option>Crédito</option><option>Boleto</option></select></div>
   </div>
   <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-rc')">Cancelar</button><button class="mbtn save" id="rc-sv" onclick="savRc()">Salvar</button></div>
@@ -1076,7 +1076,7 @@ function chgMonth(dir){
 }
 
 // ═══ CATEGORIA → ICON
-var CAT_ICONS={'Alimentação':'🍽','Transporte':'🚗','Moradia':'🏠','Saúde':'⊕','Lazer':'★','Educação':'◇','Vestuário':'◈','Assinaturas':'⊞','Presentes':'◉','Salário':'$','Freelance':'§','Investimento':'∆','Outros':'·'};
+var CAT_ICONS={'Alimentação':'🍽','Transporte':'🚗','Moradia':'🏠','Saúde':'⊕','Lazer':'★','Educação':'◇','Vestuário':'◈','Assinaturas':'⊞','Presentes':'◉','Cartão de Crédito':'◫','Salário':'$','Freelance':'§','Investimento':'∆','Outros':'·'};
 function catIcon(c){return CAT_ICONS[c]||'·';}
 
 // ═══ INVESTIMENTO COLORS por tema (sempre derivado do accent)
