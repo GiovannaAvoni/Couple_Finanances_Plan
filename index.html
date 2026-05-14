@@ -456,6 +456,9 @@ body.theme-cocoon .modal h3{font-family:var(--fnt-display);font-weight:700}
 .mbtn.save{background:var(--accent);color:var(--accent-fg)}
 .mbtn-del{width:100%;padding:.6rem;border:1px solid var(--brd);border-radius:var(--r);font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--neg);background:transparent;margin-top:.55rem}
 .mbtn-del:hover{background:color-mix(in oklab,var(--neg) 8%,transparent)}
+.mfg-toggle{display:flex;align-items:center;padding:.2rem 0}
+.toggle-lbl{display:flex;align-items:center;gap:.55rem;font-size:.84rem;font-weight:500;color:var(--ink2);cursor:pointer;user-select:none}
+.toggle-lbl input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
 
 /* TOAST */
 #toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(12px);opacity:0;pointer-events:none;background:var(--ink);color:var(--bg);padding:.7rem 1.3rem;border-radius:99px;font-size:.86rem;font-weight:600;z-index:999;transition:all .25s;box-shadow:0 10px 30px -8px rgba(0,0,0,.3)}
@@ -595,9 +598,11 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
 
 <div class="mol" id="mo-en" onclick="if(event.target===this)closeModal('mo-en')"><div class="modal">
   <h3 id="en-ti">Nova entrada</h3><input type="hidden" id="en-id">
-  <div class="mrow"><div class="mfg"><label>Data</label><input type="date" id="en-dt"></div><div class="mfg"><label>Valor R$</label><input type="number" id="en-vl" inputmode="decimal"></div></div>
+  <div class="mrow" id="en-dt-row"><div class="mfg"><label>Data</label><input type="date" id="en-dt"></div><div class="mfg"><label>Valor R$</label><input type="number" id="en-vl" inputmode="decimal"></div></div>
+  <div class="mrow" id="en-dt-row-rec" style="display:none"><div class="mfg"><label>Valor R$</label><input type="number" id="en-vl-rec" inputmode="decimal"></div><div class="mfg"><label>Dia do mês</label><input type="number" id="en-dia" min="1" max="28" inputmode="numeric" placeholder="Ex: 5"></div></div>
   <div class="mfg"><label>Descrição</label><input type="text" id="en-ds"></div>
   <div class="mfg"><label>Categoria</label><select id="en-ct"><option>Salário</option><option>Freelance</option><option>Investimento</option><option>Presente</option><option>Reembolso</option><option>Outros</option></select></div>
+  <div class="mfg-toggle" id="en-rec-row"><label class="toggle-lbl"><input type="checkbox" id="en-rec" onchange="togEnRec()"> Recorrente (mensal)</label></div>
   <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-en')">Cancelar</button><button class="mbtn save" id="en-sv" onclick="savEn()">Salvar</button></div>
   <button class="mbtn-del" id="en-del-btn" style="display:none" onclick="delEnFromModal()">Excluir</button>
 </div></div>
@@ -766,8 +771,13 @@ window.calcMes=function(data,mes,ano){
   // IDs dos recorrentes ativos (para filtrar gastos virtuais e gerar entradas virtuais)
   var activeRecIds=new Set(recs.filter(function(r){return String(r.ativo)==='true';}).map(function(r){return r.id;}));
   var gM=g.filter(function(r){return!r.virtual&&isMes(r.data,mes,ano);});
-  // Só inclui gastos virtuais cujo recorrente pai está ativo
-  var recM=g.filter(function(r){return r.virtual&&isMes(r.data,mes,ano)&&(!r.recId||activeRecIds.has(r.recId));});
+  // Gera recorrentes de saída dinamicamente (assim aparecem mesmo sem entrada virtual no array de gastos)
+  var recM=recs.filter(function(r){return r.tipo==='gasto'&&String(r.ativo)==='true';}).map(function(r){
+    var day=Math.min(Number(r.dia_vencimento)||1,28);
+    var dateStr=String(ano)+'-'+(String(mes+1).padStart(2,'0'))+'-'+(String(day).padStart(2,'0'));
+    return{id:'rec_'+r.id,recId:r.id,descricao:r.descricao,valor:r.valor,
+      categoria:r.categoria||'Outros',forma_pagamento:r.forma_pagamento||'',data:dateStr,virtual:true,vencimento:day};
+  });
   var eM=e.filter(function(r){return!r.virtual&&isMes(r.data,mes,ano);});
   // Entradas virtuais geradas a partir dos recorrentes de entrada ativos (para exibição no overview)
   var recEM=recs.filter(function(r){return r.tipo==='entrada'&&String(r.ativo)==='true';}).map(function(r){
@@ -1626,6 +1636,7 @@ function openEditEn(item){
   editEn=true;
   document.getElementById('en-ti').textContent='Editar entrada';
   document.getElementById('en-del-btn').style.display='block';
+  document.getElementById('en-rec-row').style.display='none';
   document.getElementById('en-id').value=item.id;
   document.getElementById('en-dt').value=item.data||'';
   document.getElementById('en-vl').value=item.valor||'';
@@ -1633,22 +1644,51 @@ function openEditEn(item){
   setSel('en-ct',item.categoria);
   openModal('mo-en');
 }
+function togEnRec(){
+  var chk=document.getElementById('en-rec');
+  var isRec=chk&&chk.checked;
+  document.getElementById('en-dt-row').style.display=isRec?'none':'';
+  document.getElementById('en-dt-row-rec').style.display=isRec?'':'none';
+  if(isRec){var vl=V('en-vl');if(vl)document.getElementById('en-vl-rec').value=vl;}
+  else{var vl=V('en-vl-rec');if(vl)document.getElementById('en-vl').value=vl;}
+}
 function savEn(){
   var id=V('en-id');
-  var f={data:V('en-dt'),descricao:V('en-ds'),valor:V('en-vl'),categoria:V('en-ct')};
-  if(!f.descricao||!f.valor||!f.data)return toast('Preencha os campos');
-  closeModal('mo-en');
-  if(editEn&&id){
-    for(var i=0;i<dashData.entradas.length;i++)if(dashData.entradas[i].id===id){Object.assign(dashData.entradas[i],f);break;}
-    toast('Entrada atualizada');
+  var chk=document.getElementById('en-rec');
+  var isRec=!editEn&&chk&&chk.checked;
+  var desc=V('en-ds'),cat=V('en-ct');
+  if(!desc)return toast('Preencha a descrição');
+  if(isRec){
+    var vl=V('en-vl-rec'),dia=V('en-dia');
+    if(!vl)return toast('Preencha o valor');
+    closeModal('mo-en');
+    dashData.recorrentes.push({id:'rc'+Date.now(),tipo:'entrada',descricao:desc,valor:vl,categoria:cat,forma_pagamento:'',dia_vencimento:Number(dia)||1,ativo:'true'});
+    toast('Entrada recorrente adicionada');
   }else{
-    dashData.entradas.push(Object.assign({id:'en'+Date.now(),virtual:false},f));
-    toast('Entrada adicionada');
+    var f={data:V('en-dt'),descricao:desc,valor:V('en-vl'),categoria:cat};
+    if(!f.valor||!f.data)return toast('Preencha os campos');
+    closeModal('mo-en');
+    if(editEn&&id){
+      for(var i=0;i<dashData.entradas.length;i++)if(dashData.entradas[i].id===id){Object.assign(dashData.entradas[i],f);break;}
+      toast('Entrada atualizada');
+    }else{
+      dashData.entradas.push(Object.assign({id:'en'+Date.now(),virtual:false},f));
+      toast('Entrada adicionada');
+    }
   }
   resetEn();renderInd();
 }
 function delEnFromModal(){var id=V('en-id');if(!id||!confirm('Excluir?'))return;dashData.entradas=dashData.entradas.filter(function(r){return r.id!==id;});closeModal('mo-en');resetEn();renderInd();toast('Excluído');}
-function resetEn(){editEn=false;document.getElementById('en-id').value='';document.getElementById('en-ti').textContent='Nova entrada';['en-dt','en-vl','en-ds'].forEach(function(id){document.getElementById(id).value='';});}
+function resetEn(){
+  editEn=false;
+  document.getElementById('en-id').value='';
+  document.getElementById('en-ti').textContent='Nova entrada';
+  ['en-dt','en-vl','en-ds','en-vl-rec','en-dia'].forEach(function(id){document.getElementById(id).value='';});
+  var chk=document.getElementById('en-rec');if(chk)chk.checked=false;
+  document.getElementById('en-dt-row').style.display='';
+  document.getElementById('en-dt-row-rec').style.display='none';
+  document.getElementById('en-rec-row').style.display='';
+}
 
 function openEditItem(id,k){
   if(k==='en'){var it=dashData.entradas.filter(function(r){return r.id===id;})[0];if(it)openEditEn(it);}
