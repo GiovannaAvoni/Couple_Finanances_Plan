@@ -574,7 +574,8 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
       <button class="tb-mnav" onclick="chgMonth(1)">›</button>
     </div>
     <div class="tb-actions">
-<button class="tbtn" id="btn-add-en" onclick="openNewEn()">+ Entrada</button>
+      <button class="tbtn" id="btn-sync" onclick="syncDash()" title="Recarregar dados da nuvem">↺</button>
+      <button class="tbtn" id="btn-add-en" onclick="openNewEn()">+ Entrada</button>
       <button class="tbtn pri" id="btn-add-gs" onclick="openNewGs()">+ Saída</button>
       <button class="tbtn" onclick="voltar()">Sair</button>
     </div>
@@ -1027,22 +1028,40 @@ function mascot(cls,sz){
   return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 34 34"><circle cx="17" cy="17" r="15" fill="var(--accent-soft)"/><circle cx="17" cy="17" r="6" fill="var(--accent)"/><g stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"><line x1="17" y1="3" x2="17" y2="6"/><line x1="17" y1="28" x2="17" y2="31"/><line x1="3" y1="17" x2="6" y2="17"/><line x1="28" y1="17" x2="31" y2="17"/><line x1="7" y1="7" x2="9" y2="9"/><line x1="25" y1="25" x2="27" y2="27"/><line x1="7" y1="27" x2="9" y2="25"/><line x1="25" y1="9" x2="27" y2="7"/></g></svg>';
 }
 
+// ═══ LOCAL PERSISTENCE
+function lsSave(){
+  if(user&&dashData){try{localStorage.setItem('dd_'+user,JSON.stringify(dashData));}catch(e){}}
+}
+function lsLoad(u){
+  try{var d=localStorage.getItem('dd_'+u);return d?JSON.parse(d):null;}catch(e){return null;}
+}
+function lsClear(u){try{localStorage.removeItem('dd_'+(u||user));}catch(e){}}
+
 // ═══ MOCK API + LOAD
-async function loadDash(){
+async function loadDash(forceApi){
   var mc = document.getElementById('mc');
   if(mc) mc.innerHTML = '<div style="text-align:center;padding:3rem;opacity:.4">Carregando...</div>';
   try{
     if(user==='casal'){
-      dashGi = await api('getDashboardData', {usuario: 'Giovanna Avoni'});
-      dashBr = await api('getDashboardData', {usuario: 'Bruno Saldanha'});
+      var sGi=!forceApi&&lsLoad('Giovanna Avoni'),sBr=!forceApi&&lsLoad('Bruno Saldanha');
+      dashGi = sGi || await api('getDashboardData', {usuario: 'Giovanna Avoni'});
+      dashBr = sBr || await api('getDashboardData', {usuario: 'Bruno Saldanha'});
       renderCasal();
     }else{
-      dashData = await api('getDashboardData', {usuario: user});
+      var stored=!forceApi&&lsLoad(user);
+      dashData = stored || await api('getDashboardData', {usuario: user});
+      if(!stored) lsSave();
       renderInd();
     }
   }catch(e){
     if(mc) mc.innerHTML='<div style="text-align:center;padding:3rem;color:var(--neg)">Erro: '+e.message+'</div>';
   }
+}
+async function syncDash(){
+  lsClear(user);
+  toast('Recarregando dados da nuvem…');
+  await loadDash(true);
+  toast('Dados atualizados');
 }
 
 // ═══ MONTH NAV
@@ -1067,6 +1086,7 @@ function invColors(){
 
 // ═══ RENDER INDIVIDUAL ═══
 function renderInd(){
+  lsSave();
   var mes=ovDate.getMonth(),ano=ovDate.getFullYear();
   var c=calcMes(dashData,mes,ano);
   var sob=c.totE-c.totSaidas,sobA=c.totEa-c.totGa;
