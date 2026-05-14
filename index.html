@@ -1372,9 +1372,11 @@ function ovRow(r){
   var venc=k!=='en'&&k!=='recEn'&&r.vencimento?vencInfo(r.vencimento,ovDate):null;
   var tagHTML='';
   if(k==='rec'||k==='recEn')tagHTML='<span class="ov-tag fixed">fixo</span>';
-  if(venc&&venc.tag==='late')tagHTML+='<span class="ov-tag late">'+venc.label+'</span>';
-  else if(venc&&venc.tag==='today')tagHTML+='<span class="ov-tag warn">'+venc.label+'</span>';
-  else if(venc&&venc.tag==='soon')tagHTML+='<span class="ov-tag">'+venc.label+'</span>';
+  if(!paid){
+    if(venc&&venc.tag==='late')tagHTML+='<span class="ov-tag late">'+venc.label+'</span>';
+    else if(venc&&venc.tag==='today')tagHTML+='<span class="ov-tag warn">'+venc.label+'</span>';
+    else if(venc&&venc.tag==='soon')tagHTML+='<span class="ov-tag">'+venc.label+'</span>';
+  }
 
   var payTog=(k!=='en'&&k!=='recEn')?'<button class="pay-tog '+(paid?'paid':'')+'" data-id="'+r.id+'" onclick="togglePaid(this.dataset.id)" title="Marcar como pago">'+(paid?'✓':'')+'</button>':'<div style="width:22px"></div>';
 
