@@ -834,7 +834,9 @@ window.calcMes=function(data,mes,ano){
   var gA=g.filter(function(r){return!r.virtual&&isMes(r.data,mesA,anoA);});
   var eA=e.filter(function(r){return!r.virtual&&isMes(r.data,mesA,anoA);});
   var aM=ap.filter(function(r){return isMes(r.data,mes,ano);});
-  var rvVal=rv.reduce(function(s,r){return r.tipo==='deposito'?s+Number(r.valor):s-Number(r.valor);},0);
+  var rvFim=new Date(ano,mes+1,0); // último dia do mês selecionado
+  var rvVal=rv.filter(function(r){return new Date(r.data+'T00:00:00')<=rvFim;})
+              .reduce(function(s,r){return r.tipo==='deposito'?s+Number(r.valor):s-Number(r.valor);},0);
   var totG=sum(gM),totRec=sum(recM),totE=sum(eM)+sum(recEM);
   return{gM:gM,recM:recM,recEM:recEM,eM:eM,gA:gA,eA:eA,aM:aM,
     totG:totG,totRec:totRec,totSaidas:totG+totRec,totE:totE,
