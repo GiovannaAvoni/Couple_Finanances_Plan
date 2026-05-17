@@ -1509,7 +1509,7 @@ function panelReserva(c,rv,metas,pct){
       '</div>'+
       '<div class="rv-list">'+
         '<div class="rv-list-title">Movimentações</div>'+
-        (rv.length?rv.slice().reverse().map(function(r){return '<div class="rv-item"><div class="rv-item-l"><span class="rv-date">'+fmtDate(r.data)+'</span>'+(r.observacao||'—')+'</div><div style="display:flex;align-items:center;gap:.3rem"><div class="rv-item-v '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'−')+' '+fmt(r.valor)+'</div><div class="rv-act-row"><button class="ov-btn" onclick="openEditRv(\''+r.id+'\')" title="Editar">✎</button><button class="ov-btn" onclick="delRv(\''+r.id+'\')" title="Excluir">✕</button></div></div></div>';}).join(''):'<div class="ov-empty">Sem movimentações.</div>')+
+        (rv.length?rv.slice().reverse().map(function(r){return '<div class="rv-item"><div class="rv-item-l"><span class="rv-date">'+fmtDate(r.data)+'</span>'+(r.observacao||'—')+'</div><div style="display:flex;align-items:center;gap:.3rem"><div class="rv-item-v '+(r.tipo==='deposito'?'dep':'ret')+'">'+(r.tipo==='deposito'?'+':'−')+' '+fmt(r.valor)+'</div><div class="rv-act-row" style="opacity:1"><button class="ov-btn" onclick="openEditRv(\''+r.id+'\')" title="Editar">✎</button><button class="ov-btn" onclick="delRv(\''+r.id+'\')" title="Excluir">✕</button></div></div></div>';}).join(''):'<div class="ov-empty">Sem movimentações.</div>')+
       '</div>'+
     '</div>'+
   '</div>';
@@ -2023,7 +2023,7 @@ function savRv(){
     var item={id:tid,data:d,valor:vl,tipo:tp,observacao:ob};
     dashData.reserva.push(item);
     toast('Movimentação salva');renderInd();
-    api('addReserva',Object.assign({usuario:user},item)).then(function(r){if(r&&r.id)_updateId(dashData.reserva,tid,r.id);});
+    api('addReserva',Object.assign({usuario:user},item)).then(function(r){if(r&&r.id){_updateId(dashData.reserva,tid,r.id);renderInd();}});
   }
   editRv=false;
   ['rv-id','rv-vl','rv-ob'].forEach(function(id){document.getElementById(id).value='';});
@@ -2055,7 +2055,6 @@ function delRvFromModal(){
   delRv(rid);
 }
 function delRv(id){
-  if(!confirm('Excluir esta movimentação da reserva?'))return;
   dashData.reserva=dashData.reserva.filter(function(x){return x.id!==id;});
   toast('Movimentação excluída');renderInd();
   api('deleteRow',{sheetName:'reserva_emergencia',id:id});
