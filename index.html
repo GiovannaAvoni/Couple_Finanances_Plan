@@ -305,9 +305,6 @@ body.theme-pulse .ov-tag{color:var(--accent)}
 .ov-tag.late{background:color-mix(in oklab,var(--neg) 18%,transparent);color:var(--neg)}
 body.theme-cocoon .ov-tag.late{background:var(--accent);color:var(--accent-fg)}
 .ov-meta{font-size:.7rem;color:var(--mut);margin-top:.15rem;font-family:var(--fnt-mono)}
-.ov-mnav{cursor:pointer;padding:0 .15rem;opacity:.3;transition:opacity .15s;user-select:none}
-.ov-row:hover .ov-mnav{opacity:.7}
-.ov-mnav:hover{opacity:1!important;color:var(--ink)}
 .ov-val{font-size:.95rem;font-weight:700;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:var(--fnt-body);width:120px;text-align:right;font-feature-settings:"tnum"}
 .ov-val.in{color:var(--accent)}
 body.theme-pulse .ov-val.in{color:var(--accent)}
@@ -597,6 +594,7 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
       <button class="tb-mnav" onclick="chgMonth(1)">›</button>
     </div>
     <div class="tb-actions">
+      <button class="tbtn" id="btn-undo" onclick="undoLast()" title="Desfazer última ação" style="display:none">↩</button>
       <button class="tbtn" id="btn-sync" onclick="syncDash()" title="Recarregar dados da nuvem">↺</button>
       <button class="tbtn" id="btn-add-en" onclick="openNewEn()">+ Entrada</button>
       <button class="tbtn pri" id="btn-add-gs" onclick="openNewGs()">+ Saída</button>
@@ -1024,6 +1022,9 @@ var ovDate=new Date(2026,4,1); // Default: maio/2026 (mes do mock)
 var dashData=null,dashGi=null,dashBr=null;
 var charts={};
 var editGs=false,editEn=false,editRc=false,editInv=false,editRv=false;
+var _undoSnap=null;
+function _saveUndo(){try{_undoSnap=JSON.parse(JSON.stringify(dashData));}catch(e){}var b=document.getElementById('btn-undo');if(b)b.style.display='';}
+function undoLast(){if(!_undoSnap)return;dashData=_undoSnap;_undoSnap=null;var b=document.getElementById('btn-undo');if(b)b.style.display='none';lsSave();renderInd();toast('Ação desfeita');}
 var currentRvId=null,currentMetaIdx=null;
 
 // ═══ THEME
@@ -1441,11 +1442,7 @@ function ovRow(r){
 
   var cat='<div class="ov-cat">'+catIcon(r.categoria)+'</div>';
 
-  var isReal=(k==='gs'||k==='en');
-  var dateStr=isReal?
-    '<span class="ov-mnav" onclick="shiftItemMonth(\''+r.id+'\',\''+k+'\',-1)" title="Mês anterior">‹</span>'+fmtDate(r.data)+'<span class="ov-mnav" onclick="shiftItemMonth(\''+r.id+'\',\''+k+'\',1)" title="Mês seguinte">›</span>':
-    fmtDate(r.data);
-  var meta=[dateStr];
+  var meta=[fmtDate(r.data)];
   if(r.categoria)meta.push(r.categoria);
   if(r.forma_pagamento)meta.push(r.forma_pagamento);
 
@@ -1557,19 +1554,6 @@ function panelRecs(recs){
       }).join(''):'<div class="ov-empty">Nenhum recorrente cadastrado.</div>')+
     '</div>'+
   '</div>';
-}
-
-function shiftItemMonth(id,kind,delta){
-  var arr=kind==='en'?dashData.entradas:dashData.gastos;
-  var item=arr.find(function(r){return r.id===id;});
-  if(!item)return;
-  var d=new Date(item.data+'T00:00:00');
-  var newM=d.getMonth()+Number(delta),newY=d.getFullYear();
-  if(newM>11){newM=0;newY++;}
-  if(newM<0){newM=11;newY--;}
-  item.data=_shiftDate(item.data,newM,newY);
-  renderInd();
-  api('updateRow',{sheetName:kind==='en'?SH.en:SH.gs,id:id,fields:{data:item.data}});
 }
 
 // ═══ DUPLICAR MÊS
@@ -1830,8 +1814,7 @@ function tonalPalette(base,n){
 function openNewGs(){
   if(user==='casal')return toast('Use o painel individual.');
   resetGs();document.getElementById('gs-del-btn').style.display='none';
-  var d=new Date(ovDate.getFullYear(),ovDate.getMonth(),new Date().getDate());
-  document.getElementById('gs-dt').value=d.toISOString().split('T')[0];
+  document.getElementById('gs-dt').value=new Date().toISOString().split('T')[0];
   openModal('mo-gs');
 }
 function openEditGs(item){
@@ -1850,7 +1833,7 @@ function savGs(){
   var id=V('gs-id');
   var f={data:V('gs-dt'),descricao:V('gs-ds'),valor:V('gs-vl'),categoria:V('gs-ct'),forma_pagamento:V('gs-pg'),vencimento:V('gs-venc')};
   if(!f.descricao||!f.valor||!f.data)return toast('Preencha os campos');
-  closeModal('mo-gs');
+  _saveUndo();closeModal('mo-gs');
   if(editGs&&id){
     for(var i=0;i<dashData.gastos.length;i++)if(dashData.gastos[i].id===id){Object.assign(dashData.gastos[i],f);break;}
     toast('Saída atualizada');
@@ -1866,7 +1849,7 @@ function savGs(){
 }
 function delGsFromModal(){
   var id=V('gs-id');if(!id||!confirm('Excluir?'))return;
-  dashData.gastos=dashData.gastos.filter(function(r){return r.id!==id;});
+  _saveUndo();dashData.gastos=dashData.gastos.filter(function(r){return r.id!==id;});
   closeModal('mo-gs');resetGs();renderInd();toast('Excluído');
   api('deleteRow',{sheetName:SH.gs,id:id});
 }
@@ -1875,8 +1858,7 @@ function resetGs(){editGs=false;document.getElementById('gs-id').value='';docume
 function openNewEn(){
   if(user==='casal')return toast('Use o painel individual.');
   resetEn();document.getElementById('en-del-btn').style.display='none';
-  var d=new Date(ovDate.getFullYear(),ovDate.getMonth(),new Date().getDate());
-  document.getElementById('en-dt').value=d.toISOString().split('T')[0];
+  document.getElementById('en-dt').value=new Date().toISOString().split('T')[0];
   openModal('mo-en');
 }
 function openEditEn(item){
@@ -1905,6 +1887,7 @@ function savEn(){
   var isRec=!editEn&&chk&&chk.checked;
   var desc=V('en-ds'),cat=V('en-ct');
   if(!desc)return toast('Preencha a descrição');
+  _saveUndo();
   if(isRec){
     var vl=V('en-vl-rec'),dia=V('en-dia');
     if(!vl)return toast('Preencha o valor');
@@ -1956,6 +1939,7 @@ function openEditItem(id,k){
 }
 function delItem(id,k){
   if(!confirm('Excluir?'))return;
+  _saveUndo();
   if(k==='en'){dashData.entradas=dashData.entradas.filter(function(r){return r.id!==id;});api('deleteRow',{sheetName:SH.en,id:id});}
   else if(k==='rec'){dashData.recorrentes=dashData.recorrentes.filter(function(r){return r.id!==id;});api('deleteRow',{sheetName:SH.rc,id:id});}
   else{dashData.gastos=dashData.gastos.filter(function(r){return r.id!==id;});api('deleteRow',{sheetName:SH.gs,id:id});}
@@ -2041,7 +2025,7 @@ function resetInv(){editInv=false;document.getElementById('inv-id').value='';doc
 function savRv(){
   var d=V('rv-dt'),vl=V('rv-vl'),tp=V('rv-tp'),ob=V('rv-ob'),rid=V('rv-id');
   if(!vl||!d)return toast('Preencha data e valor');
-  closeModal('mo-rv');
+  _saveUndo();closeModal('mo-rv');
   if(editRv&&rid){
     var idx=dashData.reserva.findIndex(function(x){return x.id===rid;});
     if(idx>=0){dashData.reserva[idx].data=d;dashData.reserva[idx].valor=vl;dashData.reserva[idx].tipo=tp;dashData.reserva[idx].observacao=ob;}
@@ -2084,7 +2068,7 @@ function delRvFromModal(){
   delRv(rid);
 }
 function delRv(id){
-  dashData.reserva=dashData.reserva.filter(function(x){return x.id!==id;});
+  _saveUndo();dashData.reserva=dashData.reserva.filter(function(x){return x.id!==id;});
   toast('Movimentação excluída');renderInd();
   api('deleteRow',{sheetName:'reserva_emergencia',id:id});
 }
