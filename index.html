@@ -475,6 +475,7 @@ body.theme-cocoon .modal h3{font-family:var(--fnt-display);font-weight:700}
 .mbtn.save{background:var(--accent);color:var(--accent-fg)}
 .mbtn-del{width:100%;padding:.6rem;border:1px solid var(--brd);border-radius:var(--r);font-size:.82rem;font-weight:600;cursor:pointer;font-family:inherit;color:var(--neg);background:transparent;margin-top:.55rem}
 .mbtn-del:hover{background:color-mix(in oklab,var(--neg) 8%,transparent)}
+.modal-note{font-size:.78rem;color:var(--mut);line-height:1.45;margin-bottom:.2rem}
 .mfg-toggle{display:flex;align-items:center;padding:.2rem 0}
 .toggle-lbl{display:flex;align-items:center;gap:.55rem;font-size:.84rem;font-weight:500;color:var(--ink2);cursor:pointer;user-select:none}
 .toggle-lbl input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
@@ -671,6 +672,16 @@ body.theme-aurora .panel,body.theme-aurora .stat,body.theme-aurora .hero-score,b
   <div class="mrow"><div class="mfg"><label>Data</label><input type="date" id="ap-dt"></div><div class="mfg"><label>Valor R$</label><input type="number" id="ap-vl" inputmode="decimal"></div></div>
   <div class="mfg"><label>Observação</label><input type="text" id="ap-ob"></div>
   <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-ap')">Cancelar</button><button class="mbtn save" onclick="savAp()">Salvar</button></div>
+</div></div>
+
+<div class="mol" id="mo-dup" onclick="if(event.target===this)closeModal('mo-dup')"><div class="modal">
+  <h3>Duplicar mês</h3>
+  <p class="modal-note">Copia saídas e entradas variáveis. Fixos e recorrentes já aparecem automaticamente em todos os meses.</p>
+  <div class="mrow">
+    <div class="mfg"><label>De</label><select id="dup-src"></select></div>
+    <div class="mfg"><label>Para</label><select id="dup-tgt"></select></div>
+  </div>
+  <div class="macts"><button class="mbtn cancel" onclick="closeModal('mo-dup')">Cancelar</button><button class="mbtn save" onclick="execDupMes()">Duplicar</button></div>
 </div></div>
 
 <div class="mol" id="mo-as" onclick="if(event.target===this)closeModal('mo-as')"><div class="modal">
@@ -1348,6 +1359,7 @@ function panelOv(c){
         '</div>'+
       '</div>'+
       '<div class="panel-actions">'+
+        '<button class="btn-add" onclick="openDupMes()" title="Duplicar mês">⇉ Duplicar</button>'+
         '<button class="btn-add" onclick="openNewEn()">+ Entrada</button>'+
         '<button class="btn-add solid" onclick="openNewGs()">+ Saída</button>'+
       '</div>'+
@@ -1527,6 +1539,59 @@ function panelRecs(recs){
       }).join(''):'<div class="ov-empty">Nenhum recorrente cadastrado.</div>')+
     '</div>'+
   '</div>';
+}
+
+// ═══ DUPLICAR MÊS
+function _dupOpts(){
+  var opts='',now=new Date();
+  for(var i=-6;i<=4;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()+i,1);
+    var m=d.getMonth(),y=d.getFullYear();
+    opts+='<option value="'+y+'-'+m+'">'+MBR[m]+' '+y+'</option>';
+  }
+  return opts;
+}
+function _shiftDate(dateStr,tgtM,tgtA){
+  var parts=String(dateStr).split('-');
+  var day=parseInt(parts[2])||1;
+  var lastDay=new Date(tgtA,tgtM+1,0).getDate();
+  day=Math.min(day,lastDay);
+  return tgtA+'-'+String(tgtM+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+}
+function openDupMes(){
+  var opts=_dupOpts();
+  document.getElementById('dup-src').innerHTML=opts;
+  document.getElementById('dup-tgt').innerHTML=opts;
+  setSel('dup-src',ovDate.getFullYear()+'-'+ovDate.getMonth());
+  openModal('mo-dup');
+}
+function execDupMes(){
+  var srcParts=V('dup-src').split('-'),tgtParts=V('dup-tgt').split('-');
+  var srcA=parseInt(srcParts[0]),srcM=parseInt(srcParts[1]);
+  var tgtA=parseInt(tgtParts[0]),tgtM=parseInt(tgtParts[1]);
+  if(srcM===tgtM&&srcA===tgtA)return toast('Selecione meses diferentes');
+  var gastosSrc=dashData.gastos.filter(function(r){return!r.virtual&&isMes(r.data,srcM,srcA);});
+  var entradasSrc=dashData.entradas.filter(function(r){return!r.virtual&&isMes(r.data,srcM,srcA);});
+  if(!gastosSrc.length&&!entradasSrc.length)return toast('Nenhum lançamento no mês de origem');
+  var temDest=dashData.gastos.some(function(r){return!r.virtual&&isMes(r.data,tgtM,tgtA);})||
+              dashData.entradas.some(function(r){return!r.virtual&&isMes(r.data,tgtM,tgtA);});
+  if(temDest&&!confirm('O mês de destino já tem lançamentos. Adicionar mesmo assim?'))return;
+  var ct=0;
+  gastosSrc.forEach(function(r){
+    var tid='gs'+Date.now()+ct++;
+    var item=Object.assign({},r,{id:tid,data:_shiftDate(r.data,tgtM,tgtA)});
+    dashData.gastos.push(item);
+    api('addGasto',Object.assign({usuario:user},item)).then(function(res){if(res&&res.id)_updateId(dashData.gastos,tid,res.id);});
+  });
+  entradasSrc.forEach(function(r){
+    var tid='en'+Date.now()+ct++;
+    var item=Object.assign({},r,{id:tid,data:_shiftDate(r.data,tgtM,tgtA),virtual:false});
+    dashData.entradas.push(item);
+    api('addEntrada',Object.assign({usuario:user},item)).then(function(res){if(res&&res.id)_updateId(dashData.entradas,tid,res.id);});
+  });
+  closeModal('mo-dup');
+  renderInd();
+  toast(ct+' lançamentos copiados para '+MBR[tgtM]+'/'+tgtA);
 }
 
 // ═══ ASSINATURAS
