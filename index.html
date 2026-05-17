@@ -1814,7 +1814,8 @@ function tonalPalette(base,n){
 function openNewGs(){
   if(user==='casal')return toast('Use o painel individual.');
   resetGs();document.getElementById('gs-del-btn').style.display='none';
-  document.getElementById('gs-dt').value=new Date().toISOString().split('T')[0];
+  var d=new Date(ovDate.getFullYear(),ovDate.getMonth(),new Date().getDate());
+  document.getElementById('gs-dt').value=d.toISOString().split('T')[0];
   openModal('mo-gs');
 }
 function openEditGs(item){
@@ -1833,6 +1834,7 @@ function savGs(){
   var id=V('gs-id');
   var f={data:V('gs-dt'),descricao:V('gs-ds'),valor:V('gs-vl'),categoria:V('gs-ct'),forma_pagamento:V('gs-pg'),vencimento:V('gs-venc')};
   if(!f.descricao||!f.valor||!f.data)return toast('Preencha os campos');
+  if(!editGs){var day=f.data.split('-')[2]||'01';f.data=ovDate.getFullYear()+'-'+String(ovDate.getMonth()+1).padStart(2,'0')+'-'+day;}
   _saveUndo();closeModal('mo-gs');
   if(editGs&&id){
     for(var i=0;i<dashData.gastos.length;i++)if(dashData.gastos[i].id===id){Object.assign(dashData.gastos[i],f);break;}
@@ -1858,7 +1860,8 @@ function resetGs(){editGs=false;document.getElementById('gs-id').value='';docume
 function openNewEn(){
   if(user==='casal')return toast('Use o painel individual.');
   resetEn();document.getElementById('en-del-btn').style.display='none';
-  document.getElementById('en-dt').value=new Date().toISOString().split('T')[0];
+  var d=new Date(ovDate.getFullYear(),ovDate.getMonth(),new Date().getDate());
+  document.getElementById('en-dt').value=d.toISOString().split('T')[0];
   openModal('mo-en');
 }
 function openEditEn(item){
@@ -1900,6 +1903,7 @@ function savEn(){
   }else{
     var f={data:V('en-dt'),descricao:desc,valor:V('en-vl'),categoria:cat};
     if(!f.valor||!f.data)return toast('Preencha os campos');
+    if(!editEn){var day=f.data.split('-')[2]||'01';f.data=ovDate.getFullYear()+'-'+String(ovDate.getMonth()+1).padStart(2,'0')+'-'+day;}
     closeModal('mo-en');
     if(editEn&&id){
       for(var i=0;i<dashData.entradas.length;i++)if(dashData.entradas[i].id===id){Object.assign(dashData.entradas[i],f);break;}
