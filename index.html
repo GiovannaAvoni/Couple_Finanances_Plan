@@ -976,11 +976,11 @@ async function api(action, params) {
   } catch(e) {
     console.warn('API offline, usando mock:', e.message);
   }
-  // Fallback mock
+  // Fallback mock (nunca salvar no localStorage)
   if (action === 'getDashboardData') {
-    return JSON.parse(JSON.stringify(
-      params.usuario === 'Bruno Saldanha' ? MOCK_BR : MOCK_GI
-    ));
+    var m=JSON.parse(JSON.stringify(params.usuario === 'Bruno Saldanha' ? MOCK_BR : MOCK_GI));
+    m._isMock=true;
+    return m;
   }
   return {ok: true, id: 'mock_' + Date.now()};
 }
@@ -1085,7 +1085,7 @@ function lsSave(){
   if(user&&dashData){try{localStorage.setItem('dd_'+user,JSON.stringify(dashData));}catch(e){}}
 }
 function lsLoad(u){
-  try{var d=localStorage.getItem('dd_'+u);return d?JSON.parse(d):null;}catch(e){return null;}
+  try{var d=localStorage.getItem('dd_'+u);if(!d)return null;var p=JSON.parse(d);if(p&&p._isMock){localStorage.removeItem('dd_'+u);return null;}return p;}catch(e){return null;}
 }
 function lsClear(u){try{localStorage.removeItem('dd_'+(u||user));}catch(e){}}
 
@@ -1096,13 +1096,18 @@ async function loadDash(forceApi){
   try{
     if(user==='casal'){
       var sGi=!forceApi&&lsLoad('Giovanna Avoni'),sBr=!forceApi&&lsLoad('Bruno Saldanha');
+      if(sGi&&sGi._isMock)sGi=null;
+      if(sBr&&sBr._isMock)sBr=null;
       dashGi = sGi || await api('getDashboardData', {usuario: 'Giovanna Avoni'});
       dashBr = sBr || await api('getDashboardData', {usuario: 'Bruno Saldanha'});
+      if(!dashGi._isMock)localStorage.setItem('dd_Giovanna Avoni',JSON.stringify(dashGi));
+      if(!dashBr._isMock)localStorage.setItem('dd_Bruno Saldanha',JSON.stringify(dashBr));
       renderCasal();
     }else{
       var stored=!forceApi&&lsLoad(user);
+      if(stored&&stored._isMock)stored=null;
       dashData = stored || await api('getDashboardData', {usuario: user});
-      if(!stored) lsSave();
+      if(!stored&&!dashData._isMock) lsSave();
       renderInd();
     }
   }catch(e){
