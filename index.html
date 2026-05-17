@@ -305,6 +305,9 @@ body.theme-pulse .ov-tag{color:var(--accent)}
 .ov-tag.late{background:color-mix(in oklab,var(--neg) 18%,transparent);color:var(--neg)}
 body.theme-cocoon .ov-tag.late{background:var(--accent);color:var(--accent-fg)}
 .ov-meta{font-size:.7rem;color:var(--mut);margin-top:.15rem;font-family:var(--fnt-mono)}
+.ov-mnav{cursor:pointer;padding:0 .15rem;opacity:.3;transition:opacity .15s;user-select:none}
+.ov-row:hover .ov-mnav{opacity:.7}
+.ov-mnav:hover{opacity:1!important;color:var(--ink)}
 .ov-val{font-size:.95rem;font-weight:700;flex-shrink:0;font-variant-numeric:tabular-nums;font-family:var(--fnt-body);width:120px;text-align:right;font-feature-settings:"tnum"}
 .ov-val.in{color:var(--accent)}
 body.theme-pulse .ov-val.in{color:var(--accent)}
@@ -1438,7 +1441,11 @@ function ovRow(r){
 
   var cat='<div class="ov-cat">'+catIcon(r.categoria)+'</div>';
 
-  var meta=[fmtDate(r.data)];
+  var isReal=(k==='gs'||k==='en');
+  var dateStr=isReal?
+    '<span class="ov-mnav" onclick="shiftItemMonth(\''+r.id+'\',\''+k+'\',-1)" title="Mês anterior">‹</span>'+fmtDate(r.data)+'<span class="ov-mnav" onclick="shiftItemMonth(\''+r.id+'\',\''+k+'\',1)" title="Mês seguinte">›</span>':
+    fmtDate(r.data);
+  var meta=[dateStr];
   if(r.categoria)meta.push(r.categoria);
   if(r.forma_pagamento)meta.push(r.forma_pagamento);
 
@@ -1550,6 +1557,19 @@ function panelRecs(recs){
       }).join(''):'<div class="ov-empty">Nenhum recorrente cadastrado.</div>')+
     '</div>'+
   '</div>';
+}
+
+function shiftItemMonth(id,kind,delta){
+  var arr=kind==='en'?dashData.entradas:dashData.gastos;
+  var item=arr.find(function(r){return r.id===id;});
+  if(!item)return;
+  var d=new Date(item.data+'T00:00:00');
+  var newM=d.getMonth()+Number(delta),newY=d.getFullYear();
+  if(newM>11){newM=0;newY++;}
+  if(newM<0){newM=11;newY--;}
+  item.data=_shiftDate(item.data,newM,newY);
+  renderInd();
+  api('updateRow',{sheetName:kind==='en'?SH.en:SH.gs,id:id,fields:{data:item.data}});
 }
 
 // ═══ DUPLICAR MÊS
