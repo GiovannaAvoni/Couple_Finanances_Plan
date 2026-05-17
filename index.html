@@ -838,9 +838,11 @@ window.calcMes=function(data,mes,ano){
   var rvVal=rv.filter(function(r){return new Date(r.data+'T00:00:00')<=rvFim;})
               .reduce(function(s,r){return r.tipo==='deposito'?s+Number(r.valor):s-Number(r.valor);},0);
   var totG=sum(gM),totRec=sum(recM),totE=sum(eM)+sum(recEM);
+  var totRecA=recs.filter(function(r){return r.tipo==='gasto'&&String(r.ativo)==='true';}).reduce(function(s,r){return s+Number(r.valor);},0);
+  var totRecEA=recs.filter(function(r){return r.tipo==='entrada'&&String(r.ativo)==='true';}).reduce(function(s,r){return s+Number(r.valor);},0);
   return{gM:gM,recM:recM,recEM:recEM,eM:eM,gA:gA,eA:eA,aM:aM,
     totG:totG,totRec:totRec,totSaidas:totG+totRec,totE:totE,
-    totGa:sum(gA),totEa:sum(eA),totA:sum(aM),rv:rvVal,
+    totGa:sum(gA)+totRecA,totEa:sum(eA)+totRecEA,totA:sum(aM),rv:rvVal,
     meta:Number(data.config&&data.config.meta_reserva||0)};
 };
 
